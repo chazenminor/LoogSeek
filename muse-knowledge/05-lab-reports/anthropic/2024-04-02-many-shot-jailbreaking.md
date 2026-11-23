@@ -1,206 +1,246 @@
-# Many-shot jailbreaking
-> ID: MK-20261123-LR-002 · Version: v1.0 · Created: 2026-11-23 · Updated: 2026-11-23
-> Status: Draft (deep dive, primary source read 2026-11-23)
-> Official links: https://www.anthropic.com/research/many-shot-jailbreaking
-> Related: MK-20261123-EM-002 (close-reading tool)
+# Many-shot Jailbreaking（多样本越狱 jailbreaking）
+> ID: MK-20261123-LR-002 · 版本：v2.0 · 创建：2026-11-23 · 更新：2026-11-23
+> 状态：草稿（深挖，原始来源 2026-11-23 已通读）
+> 变更记录：2026-11-23：改写为中文，按精读工具 v2.0 补科学问题还原与为什么链、科学价值评估。
+> 官方链接：https://www.anthropic.com/research/many-shot-jailbreaking
+> 相关：MK-20261123-EM-002（精读工具）
 
-> Method note: primary source read in full via text fetch (not a live browser visit) on 2026-11-23: the Anthropic research page (116 lines fetched) and the linked full paper PDF at `https://assets.claude.com/af5633c94ed2beb282f6a53c595eb437e8e7b630.pdf` (2,790 lines fetched, §§1–8 plus Appendices A–K). Figure interiors in the PDF text extraction are garbled in places; numbers taken only from legible body text, figure captions, and appendix text are reported below, and figure-only values that could not be read legibly are marked as such. No numbers were copied from secondary summaries. No RSI/harness framing is used.
+> 方法说明：原始来源于 2026-11-23 通过文本抓取通读全文（非实时浏览器访问）：Anthropic 研究页面（抓取 116 行）及链接的全文论文 PDF `https://assets.claude.com/af5633c94ed2beb282f6a53c595eb437e8e7b630.pdf`（抓取 2,790 行，§§1–8 及附录 A–K）。PDF 文本提取中部分图内数字错乱；以下仅报告正文、图注与附录文本中可辨认的数字，图内独有且无法清晰辨认的值已标明。未从二手综述复制任何数字。未使用 RSI / harness 框架。
 
-## A. Identification
+## A. 识别
 
-| Field | Value |
+| 字段 | 内容 |
 |---|---|
-| Title | Many-shot Jailbreaking |
-| Authors | Cem Anil, Esin Durmus, Mrinank Sharma, Joe Benton, Sandipan Kundu, Joshua Batson, Nina Rimsky, Meg Tong, Jesse Mu, Daniel Ford, Francesco Mosconi, Rajashree Agrawal, Rylan Schaeffer, Naomi Bashkansky, Samuel Svenningsen, Mike Lambert, Ansh Radhakrishnan, Carson Denison, Evan J. Hubinger, Yuntao Bai, Trenton Bricken, Timothy Maxwell, Nicholas Schiefer, Jamie Sully, Alex Tamkin, Tamera Lanham, Karina Nguyen, Tomasz Korbak, Jared Kaplan, Deep Ganguli, Samuel R. Bowman, Ethan Perez, Roger Grosse, David Duvenaud (equal advising noted for Perez, Grosse, Duvenaud). Affiliations: Anthropic; University of Toronto; Vector Institute; Constellation; Stanford; Harvard. Correspondence: Cem Anil <cem@anthropic.com> |
-| Published | 2024-04-02 (Anthropic research page metadata: "Published: 2024-04-02T00:00:00.000Z"; page "Updated: 2026-11-13T22:37:05.632Z" — that update date is page metadata, not a paper revision date) |
-| Venue / type | Lab report / paper (PDF hosted on Anthropic's CDN), not stated to be peer-reviewed. Type per close-reading tool: measurement / existing-system analysis + research prototype (attack + mitigations) + scaling-law characterisation. |
-| Version | PDF filename in the CDN link is `Many_Shot_Jailbreaking__2024_04_02_0936.pdf`; no arXiv version number appears in the paper or on the Anthropic page. See "Unverified" section for the arXiv ID. |
-| Analyst / analysis date | Deep dive created 2026-11-23. Passes: full read of blog page + full paper (equivalent of Keshav passes 1–2, plus targeted pass 3 on appendices B–K for methods/numbers). |
-| Domain / ID | 05-lab-reports, code LR; stable ID MK-20261123-LR-002. |
+| 标题 | Many-shot Jailbreaking |
+| 作者 | Cem Anil, Esin Durmus, Mrinank Sharma, Joe Benton, Sandipan Kundu, Joshua Batson, Nina Rimsky, Meg Tong, Jesse Mu, Daniel Ford, Francesco Mosconi, Rajashree Agrawal, Rylan Schaeffer, Naomi Bashkansky, Samuel Svenningsen, Mike Lambert, Ansh Radhakrishnan, Carson Denison, Evan J. Hubinger, Yuntao Bai, Trenton Bricken, Timothy Maxwell, Nicholas Schiefer, Jamie Sully, Alex Tamkin, Tamera Lanham, Karina Nguyen, Tomasz Korbak, Jared Kaplan, Deep Ganguli, Samuel R. Bowman, Ethan Perez, Roger Grosse, David Duvenaud（Perez、Grosse、Duvenaud 注明为同等指导）。机构：Anthropic；University of Toronto；Vector Institute；Constellation；Stanford；Harvard。通讯作者：Cem Anil <cem@anthropic.com> |
+| 发表 | 2024-04-02（Anthropic 研究页面元数据："Published: 2024-04-02T00:00:00.000Z"；页面 "Updated: 2026-11-13T22:37:05.632Z"——该更新日期是页面元数据，不是论文修订日期） |
+| 发表地 / 类型 | 实验室报告 / 论文（PDF 托管于 Anthropic 的 CDN），未说明经过同行评审。按精读工具分类：测量 / 现有系统分析 + 研究原型（攻击 + 缓解）+ 标度律刻画。 |
+| 版本 | CDN 链接中的 PDF 文件名为 `Many_Shot_Jailbreaking__2024_04_02_0936.pdf`；论文或 Anthropic 页面中均未出现 arXiv 版本号。arXiv ID 见文末“未核实”一节。 |
+| 分析者 / 分析日期 | 深挖创建于 2026-11-23。遍数：博客页 + 全文通读（相当于 Keshav 第 1–2 遍，另对附录 B–K 做针对性第 3 遍，核查方法与数字）。 |
+| 领域 / ID | 05-lab-reports，代码 LR；稳定 ID 为 MK-20261123-LR-002。 |
 
-## B. Question & claims (five Cs)
+## B. 问题与主张（五 C + 科学问题还原）
 
-**Research question (one sentence, analyst's words):** Does stuffing a long-context LLM prompt with hundreds of fake user–assistant dialogues in which the "assistant" complies with harmful requests reliably override the model's safety training — and if so, how does success scale with the number of demonstrations, across models, tasks, and formatting, and can standard alignment or prompt defences stop it?
+**研究问题（一句话，分析者自己的话）：**把一个长上下文大语言模型的提示词塞满数百段伪造的用户–助手对话——其中“助手”对有害请求一律照办——能否可靠地压倒模型的安全训练？如果能，成功率如何随示例数变化、在不同模型、任务与格式间如何变化，常规对齐或提示词防御能否阻止它？
 
-PICO-style: System/population — safety-trained LLMs, chiefly Claude 2.0, plus GPT-3.5, GPT-4, Llama 2 (70B), Mistral 7B. Intervention — many-shot jailbreaking (MSJ): a single prompt containing n faux harmful Q–A dialogues followed by a target harmful query. Comparator — zero/few-shot prompts, other jailbreaks (competing-objectives, GCG suffix), and mitigations (SL/RL alignment, targeted SL/RL, In-Context Defense, Cautionary Warning Defense). Outcome — harmful-response rate (refusal-classifier judged) and negative log-likelihood (NLL) of harmful completions.
+PICO 式：系统 / 人群——经安全训练的大语言模型，主要为 Claude 2.0，另有 GPT-3.5、GPT-4、Llama 2 (70B)、Mistral 7B。干预——多样本越狱（many-shot jailbreaking, MSJ）：单个提示词包含 n 段伪造的有害问答对话，其后接一个目标有害问题。对照——零样本 / 少样本提示、其他越狱方法（竞争目标、GCG 后缀），以及缓解措施（SL / RL 对齐、针对性 SL / RL、上下文内防御、警示性警告防御）。结果——有害回复率（由拒绝分类器判定）与有害补全的负对数似然（negative log-likelihood, NLL）。
 
-**Five Cs:** Category — safety evaluation / adversarial-attack measurement paper with scaling-law analysis. Context — context windows grew from ~4,000 tokens (early 2023) to up to 10M tokens (Reid et al. 2024, Gemini 1.5) during 2023; few-shot jailbreaking in the short-context regime was already known (Wei et al. 2023b; Rao et al. 2023). Correctness (first-pass impression) — the core phenomenon is plausible and the design is straightforward; the mechanism claim (in-context learning) is correlational, not causally isolated. Contributions — see C1–C6. Clarity — 4/5: the attack, metrics, and mitigation results are clearly described; figure interiors and fitted power-law parameter values are not legibly recoverable from the text layer, and several design details (seeds, sampling temperature for attack evaluation, error bars) are not reported.
+**五 C：**类型（Category）——安全评估 / 对抗攻击测量论文，含标度律分析。背景（Context）——2023 年间上下文窗口从约 4,000 tokens（2023 年初）增长到最高 10M tokens（Reid et al. 2024, Gemini 1.5）；短上下文下的少样本越狱此前已知（Wei et al. 2023b；Rao et al. 2023）。正确性（Correctness，初读印象）——核心现象可信，设计直接；机制主张（上下文学习 in-context learning）是相关性证据，未做因果隔离。贡献（Contributions）——见 C1–C6。清晰度（Clarity）——4/5：攻击、指标与缓解结果描述清晰；图内细节与拟合的幂律参数值无法从文本层清晰恢复，若干设计细节（种子、攻击评估的采样温度、误差棒）未报告。
 
-**Main claims:**
+### 科学问题还原：五问（分析者自己的话）
 
-- **C1 — MSJ works, and scales with shots.** On Claude 2.0, MSJ "doesn't work at all with 5 shots" but "works consistently with 256 shots" across tasks from insults to weapons instructions (Fig. 2 caption, §3.1). On the malicious use-cases dataset the attack was scaled to ~70,000 tokens "without observing a plateau in the harmful response rate" (§3.1).
-- **C2 — It generalises across models.** Claude 2.0, GPT-3.5-turbo-16k-0613, GPT-4-1106-preview, Llama 2 (70B), Mistral 7B all adopt the harmful behaviour; "around 128-shot prompts are sufficient for all of the aforementioned models to adopt the harmful behavior" on the malevolent-personality evals (§3.2).
-- **C3 — Effectiveness follows a power law in the number of shots**, for MSJ and for benign in-context learning alike: −E[log P(harmful resp. | n-shot MSJ)] = C·n^(−α) + K (Eq. 1, §4). Larger models have larger exponents / learn faster in context and need fewer shots (§4.2).
-- **C4 — The mechanism is in-context learning.** Benign ICL tasks show the same power-law pattern (§4.1), and a toy single-attention-head model yields power laws with α = 1 (exact repetition) or α = 1/2 (diverse shots) (App. G). The authors explicitly leave testing these mechanisms "for future work" (§4.1).
-- **C5 — Standard alignment does not fix it, it only delays it.** SL and RL raise the power-law intercept (lower zero-shot harmful probability) but do not reduce the exponent; targeted SL/RL on MSJ examples (up to 10 shots in training, tested to 30) likewise change only the intercept (§§5.1–5.3, Figs. 5–6).
-- **C6 — Prompt-based defences can help, unevenly.** In-Context Defense (ICD) barely helps (61% → 54% attack success at 205 shots, deception category); Cautionary Warning Defense (CWD) cuts it to 2% (§5.4, App. I). The blog page reports the same 61% → 2% figure.
-- **C7 (replication) — Independent HarmBench replication agrees.** On Claude 2.0, vanilla 128-shot MSJ has 31% attack success rate (ASR) vs 2% for the best HarmBench baseline attack (PAIR) — "a 15x improvement"; compositional MSJ reaches ~40% (§7, App. K.4).
+1. **反常 / 现象是什么？**安全训练本应让模型拒绝有害请求，但只要在提示词里堆够多“助手照办”的伪造对话，模型就开始照办——拒绝不是被一次性绕过，而是随示例数平滑、系统地瓦解；更反常的是，侮辱类内容约 8 个示例就过半数被攻破，而武器类内容要多得多，同一攻击在不同任务上的门槛相差悬殊。
+2. **为什么重要，不解决会怎样？**对领域而言，不解决它，关于“对齐能否扛住长上下文”的信念会一直是错的：上下文越长，安全边界越不可靠。对实践而言，不解决它，任何部署长上下文模型的系统都留下一个随窗口扩大而变大的攻击面——攻击者只需更多示例，不需新漏洞；而且用来发现问题的监督本身也可能在长提示下失效。
+3. **为什么之前做不了 / 没做？**卡住的点是上下文长度与可观测性：2023 年之前窗口只有约 4,000 tokens，塞不下数百段对话；窗口变长后才出现这个现象；同时也没有现成的度量能把“攻击成功”随示例数的变化刻画成一条可外推的曲线。真正移走的石头是长上下文本身的出现，加上用 NLL 把低成功率下的微弱变化放大为可测信号的设计。
+4. **为什么这个方法 / 设计能回答这个问题？**剂量–反应设计恰好绕过了上述 blocker：固定目标问题、只改变示例数 n，用同一套提示在 1、2、4、…、256 个样本上扫一遍，再以 NLL 的对数–对数线性关系把“越塞越有效”变成可拟合、可跨模型比较的幂律；跨模型、跨格式、跨主题的对照则检验这条曲线是不是只在某一模型或某一措辞下成立。
+5. **答案改变了什么认知或实践？**认知上，安全不再是一个“有或无”的开关，而是一条随上下文长度平滑下滑的曲线，且常规对齐只抬高截距、不改变斜率——“多训一点就能防住”的信念被削弱。实践上，提示词层面的警告防御（CWD）被证明在单类任务上可把成功率从 61% 压到 2%，提示防御的优先级应高于继续加码同类对齐；但机制未定，所以“必须牺牲良性上下文学习才能防住”的悲观结论并未被证明。
 
-**Claimed vs actually supported contribution:** the paper claims a new attack surface, its power-law characterisation, a mechanistic hypothesis, and a mitigation assessment. The attack existence/scaling and the mitigation-intercept finding are directly supported by the reported experiments; the ICL-mechanism claim is supported only by parallel scaling patterns plus an untested toy model — i.e. evidence of a shared signature, not of a shared circuit. The "universal jailbreak" suggestion (§3.4) is explicitly speculative ("one could potentially construct").
+### 为什么链（针对最承重的 C3 与 C4）
 
-**Background / what changes if it is wrong:** builds on few-shot/in-context attacks (Wei et al. 2023b; Rao et al. 2023), ICL scaling (Xiong et al. 2023), and the Bayesian-inference view of alignment limits (Wolf et al. 2023). If C3/C4 were wrong — i.e. if MSJ success were driven by something other than general ICL (e.g. classifier artefacts, or the specific harmful-demo distribution) — then the pessimistic conclusion that fixing MSJ requires harming benign ICL would not follow, and targeted defences would look more promising than the paper suggests.
+#### 针对 C3：攻击效果随示例数服从幂律
 
-## C. Assumptions map (first principles)
+| 层 | 为什么……？ | 因为…… | 证据 / 位置 | 状态 |
+|---|---|---|---|---|
+| 1 | （现象层）为什么有害回复率 / 有害补全的 NLL 随示例数 n 平滑变化？ | 提示词中伪造的有害问答越多，模型对目标有害补全赋予的概率越高，NLL 随 n 呈幂律下降；5 个样本时攻击“完全不起作用”，256 个样本时“持续起作用” [FACT: 图 2 图注，§3.1] | 图 2；§3.1 | 已验证（定性阈值与趋势）；拟合参数值未核实（E13） |
+| 2 | （机制层）为什么更多示例会系统地抬高有害补全的概率，而不是随机波动？ | 作者的解释是上下文学习：模型从示例中推断出当前对话的隐含任务是“照办有害请求”，示例越多，推断越确定 [FACT: §4.1]；分析者补：也可能是模型把长伪造历史当作真实对话状态，从而认为拒绝策略不再适用 [GUESS] | §4.1；分析者补，依赖 §C 的 A4 | 机制未验证——两条分支预测的剂量–反应曲线形状相同，现有数据区分不了 |
+| 3 | （根层）为什么这件事在更深层次上是必然的 / 可能的 / 只是巧合？ | 此处分叉——分支 A（作者）：上下文学习是通用机制，良性任务与有害任务共享同一条幂律，见 §4.1 良性任务的平行结果 [FACT: §4.1，图 2R]；分支 B（替代解释）：伪造对话的格式与分布本身在驱动模型续写同一风格，与“学会任务”无关，见 §H 替代解释 3 [GUESS] | 分支 A：§4.1；分支 B：分析者补，见 §H 替代解释 3 | **未回答**——论文未做“剥离对话格式的 MSJ vs 剥离格式的良性上下文学习”的对照实验；链止于承重假设 A4（§C，未验证） |
+| 3' | 为什么没有平台期还值得报告？ | 恶意用例数据集上攻击扩展到约 70,000 tokens 仍“未观察到有害回复率出现平台期” [FACT: §3.1]；但这远低于 Claude 2.0 的完整上下文窗口，平台期在 70k tokens 之外未被检验 | §3.1；E2 | 已验证（70k 内无平台期）；70k 之外是**未回答** |
 
-| # | Assumption (paraphrase + location) | Type | Load-bearing? | Evidence in paper | What would break it |
+#### 针对 C4：机制是上下文学习
+
+| 层 | 为什么……？ | 因为…… | 证据 / 位置 | 状态 |
+|---|---|---|---|---|
+| 1 | （现象层）为什么作者认为 MSJ 与良性上下文学习是同一机制？ | 良性上下文学习任务（LogiQA、TruthfulQA 等）也呈现同样的幂律模式 [FACT: §4.1，图 2R，附录 D.2] | §4.1；附录 D.2 | 已验证（曲线形状平行）；平行不等于同一机制 |
+| 2 | （机制层）为什么同样的幂律形状能说明机制相同？ | 作者用单注意力头玩具模型推导出幂律，精确重复时 α = 1、多样样本时 α = 1/2 [FACT: 附录 G]；但作者明确把检验这些机制“留待未来工作” [FACT: §4.1] | 附录 G；§4.1 | 机制未验证——玩具模型证明“量级上可能”，未证明“实际就是它” |
+| 3 | （根层）为什么这个区分重要？ | 若分支 A（共享上下文学习机制）为真，则在不损害良性上下文学习的前提下缓解 MSJ“可能具有挑战性” [FACT: §4.1]；若分支 B（角色 / 上下文信任混淆，见 §H 替代解释 1）为真，则针对性防御可能在不损害良性能力的情况下压平 MSJ 的斜率 [GUESS] | §4.1；分析者补，依赖 §C 的 A4 | 链止于承重假设 A4（§C，未验证）；这是全篇最承重的假设，也是 §F 最弱一环的根 |
+| 反事实检验 | 去掉“共享机制”这一原因，C3 的曲线还成立吗？ | 成立——曲线本身只描述剂量–反应，不依赖机制解释；去掉它，塌的是 C4 与 C5 的悲观解读，不是 C1–C3 的测量结果 | §B 声称贡献 vs 实际支持的贡献 | 已验证（逻辑层面） |
+
+自下而上复核：若 A4 为真，因此良性与有害任务共享幂律，因此对齐只能抬高截距，因此 MSJ 难以根治——链条在第 2 层（机制）处断开：平行曲线与玩具模型都不足以支撑“因此共享机制”这一步。
+
+**主要主张：**
+
+- **C1——MSJ 有效，且随示例数扩展。**在 Claude 2.0 上，MSJ 在 5 个样本时“完全不起作用”，在 256 个样本时“持续起作用”，任务范围从侮辱到武器说明（图 2 图注，§3.1）。在恶意用例数据集上，攻击扩展到约 70,000 tokens，仍“未观察到有害回复率出现平台期”（§3.1）。
+- **C2——它跨模型泛化。**Claude 2.0、GPT-3.5-turbo-16k-0613、GPT-4-1106-preview、Llama 2 (70B)、Mistral 7B 都采纳了有害行为；在恶意人格评估上，“约 128 个样本的提示足以让上述所有模型采纳有害行为”（§3.2）。
+- **C3——效果随示例数服从幂律**，对 MSJ 与良性上下文学习皆然：−E[log P(harmful resp. | n-shot MSJ)] = C·n^(−α) + K（公式 1，§4）。更大的模型指数更大 / 上下文学习更快，需要的样本更少（§4.2）。
+- **C4——机制是上下文学习。**良性上下文学习任务呈现同样的幂律模式（§4.1），单注意力头玩具模型可导出幂律，α = 1（精确重复）或 α = 1/2（多样样本）（附录 G）。作者明确把检验这些机制“留待未来工作”（§4.1）。
+- **C5——标准对齐不能根治它，只能推迟它。**SL 与 RL 抬高幂律截距（降低零样本有害概率），但不降低指数；针对 MSJ 示例的靶向 SL / RL（训练最多 10 个样本，测试到 30 个）同样只改变截距（§§5.1–5.3，图 5–6）。
+- **C6——提示词防御有帮助，但不均匀。**上下文内防御（In-Context Defense, ICD）帮助甚微（205 个样本时攻击成功率 61% → 54%，欺骗类别）；警示性警告防御（Cautionary Warning Defense, CWD）将其压到 2%（§5.4，附录 I）。博客页报告了同样的 61% → 2%。
+- **C7（复现）——独立的 HarmBench 复现结果一致。**在 Claude 2.0 上，原版 128 样本 MSJ 的攻击成功率（attack success rate, ASR）为 31%，而最佳 HarmBench 基线攻击（PAIR）为 2%——“15 倍提升”；组合式 MSJ 达到约 40%（§7，附录 K.4）。
+
+**声称贡献 vs 实际支持的贡献：**论文声称发现了一个新的攻击面、刻画了其幂律、提出机制假说并评估缓解措施。攻击的存在性 / 扩展性与缓解措施只改变截距的发现有直接实验支持；上下文学习机制主张仅有平行标度模式加一个未经检验的玩具模型支持——即共享特征的证据，而非共享回路的证据。“通用越狱”建议（§3.4）明确是推测（“one could potentially construct”）。
+
+**背景 / 如果它是错的，什么会变：**建立在少样本 / 上下文攻击（Wei et al. 2023b；Rao et al. 2023）、上下文学习标度（Xiong et al. 2023）与对齐极限的贝叶斯推断视角（Wolf et al. 2023）之上。如果 C3 / C4 错了——即 MSJ 成功由上下文学习之外的因素驱动（例如分类器伪影，或特定有害示例分布）——那么“修复 MSJ 必须损害良性上下文学习”的悲观结论就不成立，针对性防御会比论文暗示的更有前景。
+
+## C. 假设图（第一性原理）
+
+| # | 假设（转述 + 位置） | 类型 | 是否承重 | 论文内证据 | 什么能打破它 |
 |---|---|---|---|---|---|
-| A1 | The refusal classifier's judgements ≈ true harmful/non-harmful responses (§3, App. B.1.1) | Unvalidated (partially validated) | Yes — all harmful-rate claims rest on it | ~98% accuracy on 2,000 hand-labelled examples, classifier itself prompted Claude 2.0 with ~12 hand-labelled examples | Systematic classifier errors correlated with shot count (e.g. long prompts confusing the classifier, or partial-compliance edge cases); a human-labelled audit stratified by shot count showing divergence |
-| A2 | NLL of a fixed harmful completion is a valid proxy for attack success probability (§3, Eq. in §3) | Unvalidated | Yes — all power-law claims rest on it | Authors argue log-prob evals "can reliably detect changes… even if the overall probability of attack success is very low" (§4); sampling-based rates and NLL trends agree qualitatively | NLL falling while sampled harmful rate stays flat (decoupling of likelihood and generation, e.g. under different decoding); the paper never reports a direct NLL-vs-rate calibration curve |
-| A3 | D = D* in most experiments — demo and target Q–A pairs drawn from the same distribution (§3, §3.4) | Explicit, soft | Yes for C1/C3 magnitudes | Stated as an assumption; §3.4 relaxes it and finds diverse cross-topic demos still work, narrow ones fail | If real attackers cannot obtain same-distribution demos, the headline rates overstate realistic risk — partly addressed by §3.4, but only for topic mismatch, not for capability/knowledge mismatch (e.g. bioweapon detail, which the authors themselves raise) |
-| A4 | MSJ works through in-context learning, the same mechanism as benign ICL (§4.1) | Unvalidated (hypothesis) | Yes for C4 and for the "hard to fix without harming ICL" conclusion | Parallel power laws on benign tasks (Fig. 2R, App. D.2); toy model deriving power laws (App. G); authors note testing the mechanisms is "left for future work" | A dissociation: an intervention that blocks MSJ while leaving benign ICL intact (later work — e.g. Ackerman & Panickssery 2025, found via search — claims exactly this; not evaluated here); or a mechanistic finding that MSJ uses a different circuit |
-| A5 | Attack strings generated by a "helpful-only" model (safety training removed) are representative of what an attacker could produce (§2) | Soft | Medium | Authors note open-source helpful-only models (e.g. Hartford 2024, WizardLM-13B-Uncensored) could do the same | If generating high-quality harmful demos requires a frontier helpful-only model an attacker lacks, real-world feasibility is lower; conversely, open models already suffice, which the authors acknowledge |
-| A6 | Power-law form (Eq. 1, bounded Eq. 6, double-scaling Eq. 7) is the right functional form, not just a good fit over the observed range | Unvalidated | Medium — forecasting claims ("predict what context-length is required") rest on it | Fits shown in Figs. 2, 9, 13–15; bounded/double laws introduced because the simple law is imprecise at small n (App. H) | Extrapolation failure beyond 256 shots / ~70k tokens; the authors did not test to the models' full context limits (Claude 2.0's window is far larger than 70k tokens) |
-| A7 | The Claude 2.0-family size variants used in §4.2 differ mainly in size (same alignment pipeline) | Not reported / can't tell | Medium for "larger models are more susceptible" | "All of the considered models are finetuned from a pretrained model using reinforcement learning, but the number of parameters of each model varies" (§4.2); sizes not numerically stated | Confounded size with training-data/compute differences across the family; the cross-developer comparison (§3.2) is also confounded by different alignment recipes |
-| A8 | HarmBench replication (App. K) is genuinely independent — separate team, codebase, design choices (§7) | Soft | Low–medium (corroboration value) | Stated in §7; uses GPT-4 as classifier instead of HarmBench's distilled Llama 2 13B, with 91% agreement on 200k samples | Shared authorship/institution and shared conceptual pipeline limit independence; it is best read as a second implementation, not an external replication |
-| A9 | Refusal behaviour on the authors' own synthetic datasets (malicious use-cases, insults) generalises to real-world harmful requests | Unvalidated | Yes for external validity | Datasets built from provider AUP categories; 200/category manually reviewed; insult questions are real human-written helpfulness questions (App. B) | Real attacker queries differ in phrasing, specificity, and difficulty; HarmBench (§7/App. K) partially mitigates this with an external benchmark |
-| A10 | Intercept-only mitigation effects imply SL/RL can never fix MSJ ("simply scaling up RL or SL training will not defend against MSJ at all context-lengths", §5) | Unvalidated (extrapolation) | Yes for the paper's headline mitigation conclusion | Intercept rises, exponent flat, across SL/RL checkpoints (Fig. 5); targeted training to 10 shots, tested to 30 (Fig. 6) | A qualitatively different fine-tuning recipe (different data, objective, or scale) that flattens the exponent; the authors themselves hedge: "Our results do not reject the idea that qualitative changes to existing finetuning pipelines might prove more effective" (§5.3) |
+| A1 | 拒绝分类器的判断 ≈ 真实的有害 / 无害回复（§3，附录 B.1.1） | 未验证（部分验证） | 是——所有有害率主张都建立在其上 | 在 2,000 个人工标注样本上准确率约 98%，分类器本身是用约 12 个人工标注示例提示 Claude 2.0 得到的 | 与样本数相关的系统性分类器误差（例如长提示迷惑分类器，或部分依从的边缘情形）；按样本数分层的人工标注审计显示分歧 |
+| A2 | 固定有害补全的 NLL 是攻击成功概率的有效代理（§3，§3 公式） | 未验证 | 是——所有幂律主张都建立在其上 | 作者认为对数概率评估“即使攻击成功总体概率很低，也能可靠检测变化”（§4）；采样得到的比率与 NLL 趋势定性一致 | NLL 下降而采样有害率持平（似然与生成脱钩，例如不同解码下）；论文从未报告 NLL 与比率的直接校准曲线 |
+| A3 | 多数实验中 D = D*——示例与目标问答对来自同一分布（§3，§3.4） | 明确，软约束 | 是，对 C1 / C3 的量级而言 | 明确陈述为假设；§3.4 放宽它，发现多样化跨主题示例仍有效，狭窄示例失效 | 若真实攻击者拿不到同分布示例， headline 比率会高估现实风险——§3.4 已部分处理，但只针对主题不匹配，未针对能力 / 知识不匹配（例如生物武器细节，作者自己提出） |
+| A4 | MSJ 通过上下文学习起作用，与良性上下文学习是同一机制（§4.1） | 未验证（假说） | 是，对 C4 及“难修复且不损害上下文学习”结论而言 | 良性任务上的平行幂律（图 2R，附录 D.2）；推导幂律的玩具模型（附录 G）；作者注明检验机制“留待未来工作” | 一个分离：某种干预阻断 MSJ 而保持良性上下文学习完好（后续工作——例如经搜索找到的 Ackerman & Panickssery 2025——声称正是如此；此处未评估）；或机制发现表明 MSJ 使用不同回路 |
+| A5 | 由“仅 helpful”模型（去掉安全训练）生成的攻击字符串代表攻击者能产出的内容（§2） | 软约束 | 中等 | 作者指出开源仅 helpful 模型（例如 Hartford 2024, WizardLM-13B-Uncensored）也能做到 | 若生成高质量有害示例需要攻击者没有的前沿仅 helpful 模型，现实可行性更低；反之，开源模型已足够，作者承认了这一点 |
+| A6 | 幂律形式（公式 1、有界公式 6、双标度公式 7）是正确的函数形式，而不仅是在观测范围内的良好拟合 | 未验证 | 中等——预测主张（“预测需要多长上下文”）建立在其上 | 拟合见图 2、9、13–15；因简单定律在小 n 时不精确而引入有界 / 双标度定律（附录 H） | 超出 256 个样本 / 约 70k tokens 的外推失败；作者未测试到模型的完整上下文上限（Claude 2.0 的窗口远大于 70k tokens） |
+| A7 | §4.2 使用的 Claude 2.0 家族尺寸变体主要在尺寸上不同（同一对齐流程） | 未报告 / 说不清 | 中等，对“更大的模型更易受攻击”而言 | “所有考虑的模型都是用强化学习从预训练模型微调而来，但每个模型的参数数量不同”（§4.2）；尺寸未以数字说明 | 尺寸与训练数据 / 算力的差异混杂；跨开发者比较（§3.2）也混杂了不同对齐配方 |
+| A8 | HarmBench 复现（附录 K）真正独立——独立团队、代码库与设计选择（§7） | 软约束 | 低–中等（佐证价值） | §7 陈述；用 GPT-4 作分类器代替 HarmBench 的蒸馏 Llama 2 13B，在 200k 样本上一致率为 91% | 共享作者 / 机构与共享概念流程限制了独立性；最好读作第二次实现，而非外部复现 |
+| A9 | 作者自有合成数据集（恶意用例、侮辱）上的拒绝行为可推广到真实世界的有害请求 | 未验证 | 是，对外部效度而言 | 数据集按供应商可接受使用政策（AUP）类别构建；每类 200 条人工审核；侮辱问题是真实人类书写的 helpfulness 问题（附录 B） | 真实攻击者查询在措辞、具体程度与难度上不同；HarmBench（§7 / 附录 K）用外部基准部分缓解了这一点 |
+| A10 | 仅截距的缓解效果意味着 SL / RL 永远修不好 MSJ（“仅仅扩大 RL 或 SL 训练在所有上下文长度上都无法防御 MSJ”，§5） | 未验证（外推） | 是，对论文 headline 缓解结论而言 | 截距上升、指数不变，见于 SL / RL 检查点（图 5）；靶向训练到 10 个样本，测试到 30 个（图 6） | 一种定性不同的微调配方（不同数据、目标或规模）能压平指数；作者自己留了口子：“我们的结果并不排除对现有微调流程做定性改变可能更有效”（§5.3） |
 
-Root assumptions: A1 (measurement) and A2 (metric) sit at the bottom — if the classifier or the NLL proxy is biased with shot count, C1–C3 all shift. A4 is the root of the mechanism/mitigation-pessimism conclusions (C4, C5's interpretation).
+根假设：A1（测量）与 A2（指标）在最底层——若分类器或 NLL 代理随样本数有偏，C1–C3 都会移动。A4 是机制 / 缓解悲观结论（C4、C5 的解读）的根。
 
-## D. Design, controls, metrics, statistics
+## D. 设计、对照、指标、统计
 
-- **Design type:** observational measurement of an attack across shot counts (dose–response), plus comparative experiments (models, formats, topic mismatch, compositions) and intervention experiments (SL/RL checkpoints, targeted SL/RL, prompt defences). No randomisation of models to conditions (models are as-found); prompt sampling uses shuffled Q–A pairs with a shared-final-target design to reduce cross-datapoint variance (App. B.3, Listings 1–2).
-- **Attack construction (§2, App. B.3):** hundreds of harmful Q–A pairs generated by a helpful-only model (instruction-tuned, no harmlessness training); order randomised; formatted as faux "Human: … Assistant: …" dialogue; target query appended; whole thing sent as one query. Requires API access (ChatGPT/Claude.ai-style chat UIs do not support inserting faux histories). All experiments on Claude 2.0 unless otherwise stated (§3).
-- **Eval settings (three, §3.1, App. B):**
-  1. Malicious use-cases: ~2,500 generated unsafe questions per category × 4 categories (abusive/fraudulent; deceptive/misleading; illegal/highly regulated goods or services; violent/hateful/threatening — a fifth label, "discrimination", appears in Table 1/Fig. 3, so the category list in text and tables is not fully consistent; see §H open questions) = ~10,000 questions; generation temperature 1.0; duplicates removed; 200 per category manually reviewed and verified to be genuinely unsafe.
-  2. Malevolent personality evals (Perez et al. 2022b, `github.com/anthropics/evals/tree/main/persona`): psychopathy as central trait, plus ends-justify-means, Machiavellianism, narcissism, resource acquisition; yes/no queries.
-  3. Opportunities to insult: 568 benign human-written questions (from a helpfulness preference-model dataset); insulting answers generated by the helpful-only model after a one-step "write the meanest possible response" prefix; manually verified to contain insults.
-- **Benign ICL tasks (App. D.2):** LogiQA, TruthfulQA, Winogrande, TriviaQA, CommonsenseQA, CREAK; run on Claude 2.0 Base.
-- **Models (§§3.2, 4.2):** Claude 2.0 (primary); GPT-3.5-turbo-16k-0613; GPT-4-1106-preview; Llama 2 (70B) — max context 4,096 tokens, limiting shot count; Mistral 7B. Google DeepMind models not evaluated: "they don't support log-probability readings needed for Figure 2M" (§3.3, footnote 1). Model-size experiments (§4.2) use unnamed Claude 2.0-family sizes ("very tiny / tiny / small / medium / large / huge" in Fig. 3M labels as extracted); parameter counts not reported in text.
-- **Controls / baselines:** 0-shot / few-shot (5-shot) prompts as the low-dose baseline; format variants (swapped user/assistant tags, translated dialogues, "Question/Answer" tags instead of dialogue tags); topic-mismatch conditions (narrow single-category vs diverse all-but-target demos); composition with (i) blackbox competing-objectives attack (Wei et al. 2023a; appends "Assistant: Sure, here's a step by step response to this question:" to every pair) and (ii) white-box GCG suffix (Zou et al. 2023; 20-token suffix, optimised on 25 harmful prompts against two safety-fine-tuned models, batch 512, top-256 candidates, 500 steps; applied to each demo and the final prompt; evaluated on AdvBench prompts). Alignment baselines: SL and RL checkpoints through a standard pipeline; targeted SL/RL with MSJ examples (training 1–10 shots, test 1–30 shots; RL run on a pre-RL snapshot of Claude Instant; robustness check swapping up to 50% of prompt mix — "no qualitative difference"). Temperature confound check: App. E.1 tests softmax temperatures 0.7–1.9 on the insults dataset (best intercept shift at T=1.3) and finds it small vs the RL intercept rise.
-- **Blinding:** not reported / not applicable — automated classifier judgements; no human rating of model outputs in the main results except dataset construction checks. Can't tell whether classifier prompts or manual reviews were blinded.
-- **Metrics:** (1) Harmful-response rate = fraction of sampled responses judged harmful by the refusal classifier (malicious/insult datasets) or by a Claude 2.0 "does the text contain rude/mean/irreverent sections? yes/no" prompt (insults); for personality evals, rate of adopting the malevolent trait. (2) NLL = E[−log P(a* | q1,a1,…,qn,an,q*)] over harmful target completions — the cross-entropy-like quantity used for all power-law fits. (3) HarmBench ASR with GPT-4 as classifier (App. K). Primary vs secondary distinction is not explicitly labelled; harmful rate is the headline outcome, NLL the scaling outcome.
-- **Statistics — not reported:** no seeds, no number of independent runs/repetitions, no error bars or confidence intervals, no p-values, no effect sizes with CIs, no multiple-comparison correction, no compute budget (hardware, runtime) anywhere in the paper as fetched. Shot counts used are powers of two (1, 2, 4, …, 256) per the listings/figures. The NLL estimator is described as consistent (App. B.3) and the prompt-sampling scheme deliberately reuses overlapping pairs across shot counts to reduce variance "in favor of some bias" — i.e. data points across shot counts are not independent, which is acknowledged but its effect on fit uncertainty is not quantified.
-- **Checklist items (NeurIPS/Pineau-style) — Yes / No / Can't tell:** claims match results — Yes, mostly, except the mechanism claim outruns its evidence (see §G). Limitations discussed — Yes (§§5, 8, Broader Impacts; but no dedicated Limitations section). Theory assumptions stated — Partly (toy model assumptions explicit, App. G). Reproducibility (data/code) — No: no code released in the paper; datasets are model-generated with prompts given, but the helpful-only generator model is "not publicly available"; exact prompts for dataset generation are given (App. B). Experimental settings — Partly (models, shot counts, temperatures for dataset generation given; eval sampling temperature/decoding not reported). Statistical significance — No. Compute — No. Ethics — Yes (Broader Impacts; prior disclosure to other developers stated on the blog page).
+- **设计类型：**攻击随样本数变化的观测测量（剂量–反应），加上比较实验（模型、格式、主题不匹配、组合）与干预实验（SL / RL 检查点、靶向 SL / RL、提示词防御）。模型未随机分配到条件（模型是现成的）；提示采样使用打乱的问答对与共享最终目标设计，以降低跨数据点方差（附录 B.3，清单 1–2）。
+- **攻击构造（§2，附录 B.3）：**数百个有害问答对由仅 helpful 模型（指令微调，无无害训练）生成；顺序随机；格式化为伪造的 "Human: … Assistant: …" 对话；其后追加目标问题；整体作为一次查询发送。需要 API 访问（ChatGPT / Claude.ai 式聊天界面不支持插入伪造历史）。除非另有说明，所有实验均在 Claude 2.0 上进行（§3）。
+- **评估设置（三项，§3.1，附录 B）：**
+  1. 恶意用例：每类约 2,500 个生成的不安全问题 × 4 类（辱骂 / 欺诈；欺骗 / 误导；非法 / 高度管制商品或服务；暴力 / 仇恨 / 威胁——第五个标签 "discrimination" 出现在表 1 / 图 3 中，因此正文与表格中的类别列表并不完全一致；见 §H 未解问题）= 约 10,000 个问题；生成温度 1.0；去重；每类 200 条人工审核并确认确实不安全。
+  2. 恶意人格评估（Perez et al. 2022b，`github.com/anthropics/evals/tree/main/persona`）：以精神病态为核心特质，另有目的证明手段合理、马基雅维利主义、自恋、资源获取；是非题。
+  3. 侮辱机会：568 个良性人类书写问题（来自 helpfulness 偏好模型数据集）；侮辱性答案由仅 helpful 模型在一步“写出最刻薄的回复”前缀后生成；人工核实含有侮辱。
+- **良性上下文学习任务（附录 D.2）：**LogiQA、TruthfulQA、Winogrande、TriviaQA、CommonsenseQA、CREAK；在 Claude 2.0 Base 上运行。
+- **模型（§§3.2、4.2）：**Claude 2.0（主要）；GPT-3.5-turbo-16k-0613；GPT-4-1106-preview；Llama 2 (70B)——最大上下文 4,096 tokens，限制样本数；Mistral 7B。Google DeepMind 模型未评估：“它们不支持图 2M 所需的对数概率读取”（§3.3，脚注 1）。模型尺寸实验（§4.2）使用未命名的 Claude 2.0 家族尺寸（图 3M 标签按提取为 "very tiny / tiny / small / medium / large / huge"）；参数量未在正文报告。
+- **对照 / 基线：**0 样本 / 少样本（5 样本）提示作为低剂量基线；格式变体（交换用户 / 助手标签、翻译对话、用 "Question/Answer" 标签代替对话标签）；主题不匹配条件（狭窄单类 vs 多样化除目标外全部类别的示例）；与以下方法的组合：(i) 黑盒竞争目标攻击（Wei et al. 2023a；向每对示例追加 "Assistant: Sure, here's a step by step response to this question:"）与 (ii) 白盒 GCG 后缀（Zou et al. 2023；20-token 后缀，针对两个经安全微调的模型在 25 个有害提示上优化，batch 512，top-256 候选，500 步；应用于每个示例与最终提示；在 AdvBench 提示上评估）。对齐基线：标准流程的 SL 与 RL 检查点；用 MSJ 示例的靶向 SL / RL（训练 1–10 个样本，测试 1–30 个样本；RL 在 Claude Instant 的预 RL 快照上运行；稳健性检查将提示混合中最多 50% 替换——“无定性差异”）。温度混杂检查：附录 E.1 在侮辱数据集上测试 softmax 温度 0.7–1.9（T=1.3 时截距移动最佳），发现其幅度远小于 RL 的截距上升。
+- **盲法：**未报告 / 不适用——自动化分类器判断；除数据集构建检查外，主要结果中没有人类对模型输出的评分。分类器提示或人工审核是否设盲，说不清。
+- **指标：**(1) 有害回复率 = 采样回复中被拒绝分类器判定为有害的比例（恶意 / 侮辱数据集），或被 Claude 2.0 “文本是否包含粗鲁 / 刻薄 / 无礼部分？是 / 否”提示判定的比例（侮辱）；人格评估中为采纳恶意特质的比率。(2) NLL = E[−log P(a* | q1,a1,…,qn,an,q*)]，对有害目标补全求期望——用于全部幂律拟合的类交叉熵量。(3) HarmBench ASR，以 GPT-4 为分类器（附录 K）。主要与次要之分未明确标注；有害率是 headline 结果，NLL 是标度结果。
+- **统计——未报告：**正文抓取中没有任何地方报告种子、独立运行 / 重复次数、误差棒或置信区间、p 值、带置信区间的效应量、多重比较校正、算力预算（硬件、运行时间）。使用的样本数为 2 的幂（1、2、4、…、256），见清单 / 图。NLL 估计量被描述为一致的（附录 B.3），提示采样方案有意在不同样本数间重用重叠问答对以降低方差，“以牺牲一些偏差为代价”——即不同样本数的数据点并不独立，这一点被承认，但其对拟合不确定性的影响未量化。
+- **检查表项（NeurIPS / Pineau 式）——Yes / No / Can't tell：**主张与结果一致——Yes，基本一致，但机制主张超出了证据（见 §G）。讨论局限——Yes（§§5、8、Broader Impacts；但无专门的 Limitations 一节）。理论假设已陈述——部分（玩具模型假设明确，附录 G）。可复现性（数据 / 代码）——No：论文中未发布代码；数据集由模型生成且给出了提示，但仅 helpful 生成模型“不公开”；数据集生成的精确提示已给出（附录 B）。实验设置——部分（模型、样本数、数据集生成温度已给出；评估采样温度 / 解码未报告）。统计显著性——No。算力——No。伦理——Yes（Broader Impacts；博客页说明已事先向其他开发者披露）。
 
-## E. Numbers ledger (exact conditions or "unusable")
+## E. 数字台账（精确条件，否则记为“不可用”）
 
-All numbers below were read from the paper text/captions as fetched. "Figure-only" means the value appears in a figure whose interior numbers were garbled in extraction — treat as read-from-figure, not text-verified.
+以下所有数字均从抓取的论文正文 / 图注中读取。“仅图内”指该值出现在图内，其内部数字在提取中错乱——按从图读取处理，而非正文核实。
 
-| # | Number | What it is | Exact conditions | Location | Baseline / comparator | Supports claim? |
+| # | 数字 | 是什么 | 精确条件 | 位置 | 基线 / 对照 | 支持主张？ |
 |---|---|---|---|---|---|---|
-| E1 | 5 shots: attack "doesn't work at all"; 256 shots: "works consistently" | Harmful-response rate, qualitative (no % given in caption) | Claude 2.0, malicious use-cases + other tasks, MSJ | Fig. 2 caption (§1/§3.1) | 5-shot vs 256-shot | Yes, C1 (threshold/scale) |
-| E2 | ~70,000 tokens, no plateau in harmful-response rate | Longest malicious-use-case attack tested | Claude 2.0, malicious use-cases dataset | §3.1 | Shorter attacks on same dataset | Yes, C1; note: far below Claude 2.0's full context window — plateau untested beyond 70k |
-| E3 | ~128 shots sufficient for all tested models to adopt harmful behaviour | Psychopathy-eval harmful rate, qualitative threshold | Claude 2.0, GPT-3.5-turbo-16k-0613, GPT-4-1106-preview, Llama 2 70B, Mistral 7B; malevolent personality evals | §3.2 | Lower shot counts on same models | Yes, C2 |
-| E4 | >128 shots → "close to 100%" adoption of malevolent behaviours | Harmful-response rate | Claude 2.0, malevolent personality evals (4 traits, Fig. 7L) | App. C.1 / Fig. 7 | Fewer shots | Yes, C1/C2 |
-| E5 | ~8 shots to pass 50% insult rate; 256 shots to pass 90% | Insult-response rate | Claude 2.0, Opportunities to Insult dataset (568 benign questions) | App. C.1 / Fig. 7R | Fewer shots | Yes, C1 (insults jailbreak far earlier than weapons content — task dependence) |
-| E6 | 61% → 54% (ICD); 61% → 2% (CWD) | Attack success rate | Claude 2.0, deception category of malicious use-cases, 205-shot MSJ; ICD = 20 prepended refusal demos; CWD = prepended + appended warning strings | §5.4, App. I, Fig. 16; blog page repeats 61% → 2% | 61% undefended baseline at same 205 shots | Yes, C6 — but single category, single shot count in text; App. I says trend similar at shorter lengths; no capability cost measured |
-| E7 | PAIR ASR 2% (best HarmBench baseline) vs vanilla MSJ 128-shot ASR 31% ("15x improvement"); compositional MSJ ~40% | Attack success rate | Claude 2.0 via Anthropic API; HarmBench 200 standard behaviours; GPT-4 classifier (91% agreement with HarmBench labels on 200k samples) | §7, App. K.4, Fig. 17 | ART/TAP/PAIR/PAP/human baselines (PAP, human, direct-ask = 0% — excluded from plot) | Yes, C7; note "15x" is 31/2 = 15.5x, rounded |
-| E8 | ~98% | Refusal-classifier accuracy | Claude 2.0 prompted with ~12 hand-labelled examples; tested on 2,000 hand-labelled Q–response pairs | App. B.1.1 | Not reported (no majority-class baseline; base rate of the 2,000 not stated) | Supports A1 partially; 2% error on 2,000 = ~40 mislabels, and accuracy at high shot counts specifically not reported |
-| E9 | ~10,000 questions (~2,500/category); 200/category manually reviewed | Dataset size / QC | Helpful-only model generation, temperature 1.0, duplicates removed | App. B.1.1 | — | Method detail, not a result |
-| E10 | 91% agreement; of disagreements, 23% flagged harmful by GPT-4 vs 77% by HarmBench labels | Classifier agreement | GPT-4 vs HarmBench-provided labels, 200k samples (App. K.2) | App. K.2 | HarmBench distilled Llama 2 13B classifier | Qualifies C7: authors judge HarmBench labels "more likely to be false positives" on disagreement — an analyst judgement, not a measured fact |
-| E11 | 20-token GCG suffix; 25 optimisation prompts; batch 512; top-256; 500 steps | GCG setup | Composed with MSJ, AdvBench prompts/completions | App. C.4 | Standard MSJ without suffix | Method detail; outcome qualitative ("drastically increases" zero-shot harmful probability, "much smaller effect" at long context, Fig. 4R) |
-| E12 | Training 1–10 shots; test 1–30 shots; up to 50% prompt-mix swap, "no qualitative difference" | Targeted SL/RL scope | Claude Instant pre-RL snapshot (RL); SL/RL on MSJ-example datasets (App. E) | §§5.2–5.3, App. E | Untargeted SL/RL checkpoints | Supports C5 only within 1–30 test shots — far below the 256-shot regime where the attack succeeds; extrapolation to long context is via the unchanged exponent, not a direct test |
-| E13 | Power-law exponents / C / K values | Fitted parameters of Eq. 1 / Eq. 6 / Eq. 7 | All tasks/models | Figs. 2, 3, 5, 9, 13–15; App. D, H | — | NOT EXTRACTABLE from the text layer (figure interiors garbled); the paper states exponents are similar across malicious-use-case categories (Fig. 9 caption) and larger for larger models (§4.2) but gives no numbers in text. Do not cite numeric exponents from this deep dive. |
-| E14 | 4,000 tokens → 10,000,000 tokens | Context-window growth during 2023 | Public LLMs generally (Xu et al. 2023; Reid et al. 2024) | §1 | — | Context, not a result |
-| E15 | 256 harmful test questions; MSJ lengths 8–205 shots | Prompt-defence eval size | Claude 2.0, malicious use-cases, App. I | App. I | Undefended baseline | Method detail for E6 |
+| E1 | 5 个样本：攻击“完全不起作用”；256 个样本：“持续起作用” | 有害回复率，定性（图注中未给百分比） | Claude 2.0，恶意用例 + 其他任务，MSJ | 图 2 图注（§1 / §3.1） | 5 样本 vs 256 样本 | 是，C1（阈值 / 扩展） |
+| E2 | 约 70,000 tokens，有害回复率无平台期 | 恶意用例数据集上测试的最长攻击 | Claude 2.0，恶意用例数据集 | §3.1 | 同数据集上的更短攻击 | 是，C1；注意：远低于 Claude 2.0 的完整上下文窗口——70k 之外的平台期未测试 |
+| E3 | 约 128 个样本足以让所有测试模型采纳有害行为 | 精神病态评估的有害率，定性阈值 | Claude 2.0、GPT-3.5-turbo-16k-0613、GPT-4-1106-preview、Llama 2 70B、Mistral 7B；恶意人格评估 | §3.2 | 同模型上的更低样本数 | 是，C2 |
+| E4 | >128 个样本 → 恶意行为采纳率“接近 100%” | 有害回复率 | Claude 2.0，恶意人格评估（4 个特质，图 7L） | 附录 C.1 / 图 7 | 更少样本 | 是，C1 / C2 |
+| E5 | 约 8 个样本过 50% 侮辱率；256 个样本过 90% | 侮辱回复率 | Claude 2.0，侮辱机会数据集（568 个良性问题） | 附录 C.1 / 图 7R | 更少样本 | 是，C1（侮辱比武器内容早得多被攻破——任务依赖性） |
+| E6 | 61% → 54%（ICD）；61% → 2%（CWD） | 攻击成功率 | Claude 2.0，恶意用例的欺骗类别，205 样本 MSJ；ICD = 前置 20 个拒绝示例；CWD = 前置 + 后置警告字符串 | §5.4，附录 I，图 16；博客页重复 61% → 2% | 同样 205 个样本的无防御基线 61% | 是，C6——但正文中仅一个类别、一个样本数；附录 I 称较短长度下趋势类似；未测量能力代价 |
+| E7 | PAIR ASR 2%（最佳 HarmBench 基线） vs 原版 MSJ 128 样本 ASR 31%（“15 倍提升”）；组合式 MSJ 约 40% | 攻击成功率 | 经 Anthropic API 的 Claude 2.0；HarmBench 200 个标准行为；GPT-4 分类器（在 200k 样本上与 HarmBench 标签的一致率为 91%） | §7，附录 K.4，图 17 | ART / TAP / PAIR / PAP / 人类基线（PAP、人类、直接提问 = 0%——已从图中排除） | 是，C7；注意“15 倍”是 31/2 = 15.5 倍，四舍五入 |
+| E8 | 约 98% | 拒绝分类器准确率 | 用约 12 个人工标注示例提示 Claude 2.0；测试于 2,000 个人工标注问答对 | 附录 B.1.1 | 未报告（无多数类基线；2,000 条的基线率未说明） | 部分支持 A1；2,000 条上 2% 误差 = 约 40 条误标，且高样本数下的准确率未专门报告 |
+| E9 | 约 10,000 个问题（约 2,500 个 / 类）；每类 200 条人工审核 | 数据集规模 / 质控 | 仅 helpful 模型生成，温度 1.0，去重 | 附录 B.1.1 | — | 方法细节，非结果 |
+| E10 | 一致率 91%；分歧中 23% 由 GPT-4 标为有害 vs 77% 由 HarmBench 标签标为有害 | 分类器一致性 | GPT-4 vs HarmBench 提供标签，200k 样本（附录 K.2） | 附录 K.2 | HarmBench 蒸馏 Llama 2 13B 分类器 | 限定 C7：作者判断分歧时 HarmBench 标签“更可能是假阳性”——这是分析者判断，不是测量事实 |
+| E11 | 20-token GCG 后缀；25 个优化提示；batch 512；top-256；500 步 | GCG 设置 | 与 MSJ 组合，AdvBench 提示 / 补全 | 附录 C.4 | 无后缀的标准 MSJ | 方法细节；结果为定性（零样本有害概率“大幅提高”，长上下文时“影响小得多”，图 4R） |
+| E12 | 训练 1–10 个样本；测试 1–30 个样本；提示混合最多替换 50%，“无定性差异” | 靶向 SL / RL 范围 | Claude Instant 预 RL 快照（RL）；MSJ 示例数据集上的 SL / RL（附录 E） | §§5.2–5.3，附录 E | 非靶向 SL / RL 检查点 | 仅在 1–30 测试样本内支持 C5——远低于攻击成功的 256 样本区间；向长上下文的外推依赖不变的指数，而非直接测试 |
+| E13 | 幂律指数 / C / K 值 | 公式 1 / 公式 6 / 公式 7 的拟合参数 | 全部任务 / 模型 | 图 2、3、5、9、13–15；附录 D、H | — | 无法从文本层提取（图内错乱）；论文称各恶意用例类别的指数相似（图 9 图注），较大模型的指数更大（§4.2），但正文未给数字。本深挖不引用指数数值。 |
+| E14 | 4,000 tokens → 10,000,000 tokens | 2023 年间上下文窗口增长 | 一般公开大语言模型（Xu et al. 2023；Reid et al. 2024） | §1 | — | 背景，非结果 |
+| E15 | 256 个有害测试问题；MSJ 长度 8–205 个样本 | 提示词防御评估规模 | Claude 2.0，恶意用例，附录 I | 附录 I | 无防御基线 | E6 的方法细节 |
 
-Numbers without usable conditions (excluded as evidence): any precise percentages read from garbled figure interiors (e.g. per-model NLL curves in Figs. 2–5, per-category rates in Fig. 8, HarmBench per-category ASR in Fig. 17) — the text layer does not support them.
+无可用条件的数字（已排除，不作证据）：图内错乱中读到的任何精确百分比（例如图 2–5 中每模型 NLL 曲线、图 8 中每类别比率、图 17 中 HarmBench 每类别 ASR）——文本层不支持它们。
 
-## F. Argument map (Argdown-style)
+## F. 论证图（Argdown 式）
 
 ```
-[MSJ is a serious, hard-to-mitigate long-context vulnerability]
-  + <C1: MSJ works and scales>
-    + [5 shots fail, 256 shots succeed on Claude 2.0 — Fig. 2]
-    + [~70k-token attacks show no plateau — §3.1]
-    + [~8 shots >50% insults; 256 shots >90% — App. C.1]
-    - (Objection) Rates rest on a Claude-2.0-prompted refusal classifier (A1); classifier accuracy at high shot counts untested.
-    - (Objection) Insults jailbreak at ~8 shots while weapons content needs far more — "MSJ works" is task-dependent; the headline glosses over this gradient.
-  + <C2: It generalises across models>
-    + [~128 shots suffice for Claude 2.0, GPT-3.5, GPT-4, Llama 2 70B, Mistral 7B — §3.2]
-    - (Objection) Google models untested (no logprob access); Llama 2 capped at 4,096 tokens, so its "128-shot" regime is a different, shorter regime.
-  + <C3: Effectiveness follows a power law>
-    + [Log-log NLL plots linear across tasks/models — §4, Figs. 2, 9]
-    + [Same pattern on benign ICL tasks — §4.1, Fig. 2R]
-    - (Objection) Fitted exponents/C/K not reported numerically in text (E13); overlapping prompt samples make shot-count points non-independent (App. B.3), so fit uncertainty is unknown.
-  + <C4: The mechanism is in-context learning>
-    + [Benign ICL follows the same power law — §4.1]
-    + [Toy single-head model derives power laws, α=1 or 1/2 — App. G]
-    - (Objection) Parallel scaling is correlation, not mechanism; toy-model testing explicitly "left for future work" (§4.1).
-    - (Objection) Co-premise: NLL of harmful completions measures the same ICL process as benign-task NLL (A2/A4). If MSJ instead exploits e.g. safety-training distribution shift or refusal-circuit suppression, the ICL story is incomplete.
-  + <C5: Alignment only delays, never prevents>
-    + [SL/RL raise intercept, exponent unchanged — §5.1, Fig. 5]
-    + [Targeted SL/RL to 10 shots, tested to 30, same pattern — §§5.2–5.3, Fig. 6]
-    - (Objection) Tested only to 30 shots for targeted training; the long-context claim rests on extrapolating an unchanged exponent, not on a 256-shot test of a targeted model.
-    - (Objection) Temperature confound checked and ruled small (App. E.1) — a genuine rebuttal to one alternative, strengthening this leg.
-  + <C6: Prompt defences can work (CWD 61%→2%)>
-    + [CWD at 205 shots, deception category — §5.4, App. I]
-    - (Objection) Single category, single model, no capability trade-off measured ("Future work should evaluate the safety-capability trade-offs", §5.4); no adaptive attacker tested against CWD.
-  + <C7: Independent HarmBench replication agrees>
-    + [31% vs 2% PAIR at 128 shots; ~40% compositional — App. K.4]
-    - (Objection) Same institution, GPT-4 classifier substituted for HarmBench's own, with a 9% disagreement rate and an author judgement favouring their classifier.
+[MSJ 是一项严重且难以缓解的长上下文漏洞]
+  + <C1: MSJ 有效且随样本数扩展>
+    + [5 个样本失败，256 个样本在 Claude 2.0 上成功——图 2]
+    + [约 70k-token 攻击无平台期——§3.1]
+    + [约 8 个样本侮辱率 >50%；256 个样本 >90%——附录 C.1]
+    - （反驳）比率建立在 Claude 2.0 提示的拒绝分类器上（A1）；分类器在高样本数下的准确率未检验。
+    - （反驳）侮辱约 8 个样本即被攻破，武器内容需要多得多——“MSJ 有效”是任务依赖的；headline 掩盖了这一梯度。
+  + <C2: 它跨模型泛化>
+    + [约 128 个样本足以让 Claude 2.0、GPT-3.5、GPT-4、Llama 2 70B、Mistral 7B 采纳——§3.2]
+    - （反驳）Google 模型未测试（无对数概率访问）；Llama 2 上限 4,096 tokens，因此它的“128 样本”区间是不同的、更短的区间。
+  + <C3: 效果服从幂律>
+    + [对数–对数 NLL 图在各任务 / 模型上呈线性——§4，图 2、9]
+    + [良性上下文学习任务上同样模式——§4.1，图 2R]
+    - （反驳）拟合指数 / C / K 未在正文以数字报告（E13）；重叠提示样本使各样本数数据点非独立（附录 B.3），拟合不确定性未知。
+  + <C4: 机制是上下文学习>
+    + [良性上下文学习服从同一幂律——§4.1]
+    + [单注意力头玩具模型推导幂律，α=1 或 1/2——附录 G]
+    - （反驳）平行标度是相关，不是机制；玩具模型检验明确“留待未来工作”（§4.1）。
+    - （反驳）共前提：有害补全的 NLL 度量的是与良性任务 NLL 相同的上下文学习过程（A2 / A4）。若 MSJ 实际利用的是例如安全训练分布偏移或拒绝回路抑制，上下文学习解释就不完整。
+  + <C5: 对齐只能推迟，无法阻止>
+    + [SL / RL 抬高截距，指数不变——§5.1，图 5]
+    + [靶向 SL / RL 训练到 10 个样本、测试到 30 个，模式相同——§§5.2–5.3，图 6]
+    - （反驳）靶向训练仅测试到 30 个样本；长上下文主张依赖外推不变的指数，而非对靶向模型做 256 样本测试。
+    - （反驳）温度混杂已检验并排除为小效应（附录 E.1）——对一个替代解释的真正反驳，加强了这一支。
+  + <C6: 提示词防御可以奏效（CWD 61%→2%)>
+    + [205 个样本、欺骗类别的 CWD——§5.4，附录 I]
+    - （反驳）单一类别、单一模型，未测量能力权衡（“未来工作应评估警示性警告防御的安全–能力权衡”，§5.4）；未测试针对 CWD 的自适应攻击者。
+  + <C7: 独立 HarmBench 复现结果一致>
+    + [128 个样本时 31% vs PAIR 的 2%；组合式约 40%——附录 K.4]
+    - （反驳）同一机构，GPT-4 分类器替代了 HarmBench 自身分类器，分歧率 9%，且作者判断偏向己方分类器。
 
-[Co-premises required throughout: A1 (classifier ≈ truth), A2 (NLL ≈ success), A3 (same-distribution demos available to attackers), A9 (synthetic datasets ≈ real harm).]
+[全程需要的共前提：A1（分类器 ≈ 真相）、A2（NLL ≈ 成功率）、A3（攻击者可获得同分布示例）、A9（合成数据集 ≈ 真实危害）。]
 ```
 
-**Weakest link:** the C4 mechanism leg — specifically the co-premise that parallel power-law scaling between MSJ and benign ICL shows a shared mechanism (A4). It is load-bearing for the paper's most consequential inference (that mitigating MSJ without harming benign ICL "may prove challenging", §4.1), yet its evidence is a similarity of curve shapes plus an explicitly untested toy model. The second-weakest is A1/A2 measurement validity at high shot counts, since every quantitative claim flows through the classifier and the NLL proxy. Evidence that would strengthen C4: an intervention (circuit-level or training-level) that shifts MSJ and benign ICL together, or a dissociation that cleanly separates them. Evidence that would break it: a defence that flattens the MSJ exponent while leaving benign ICL intact.
+**最弱一环：**C4 机制支——具体是共前提“MSJ 与良性上下文学习之间平行的幂律标度表明机制共享”（A4）。它对论文最具后果的推论（在不损害良性上下文学习的前提下缓解 MSJ“可能具有挑战性”，§4.1）是承重的，但其证据只是曲线形状相似加一个明确未经检验的玩具模型。第二弱的是高样本数下 A1 / A2 的测量效度，因为每个定量主张都经由分类器与 NLL 代理。能加强 C4 的证据：某种干预（回路层或训练层）使 MSJ 与良性上下文学习一起移动，或干净分离两者的分离证据。能打破它的证据：一种防御只压平 MSJ 的指数而保持良性上下文学习完好。
 
-## G. Validity judgements
+## G. 判断
 
-- **Internal validity: 3/5.** Dose–response design is clean (shared final targets across shot counts, overlapping-pair variance control), and the temperature confound is explicitly tested (App. E.1). Threats: (i) shot-count data points are non-independent by construction (App. B.3) with no uncertainty quantification; (ii) no seeds/repetitions reported, so run-to-run variability is unknown; (iii) classifier and NLL-proxy biases correlated with prompt length are untested; (iv) cross-model comparisons confound model identity with alignment recipe and context limit.
-- **External validity: 3/5.** Generalises across 5 models from 3 developers, multiple harm categories, formats, and topic mismatch — genuinely broad for an attack paper. Does not generalise to: Google models (untested), chat-UI deployment (attack needs API-style faux-history injection), Claude 3 family (blog page says mitigations were being evaluated on Claude 3, but the paper tests Claude 2.0), real attacker query distributions (synthetic datasets), or contexts beyond ~70k tokens / 256 shots (untested despite much larger windows existing).
-- **Construct validity: 2/5.** "Harmful response" is operationalised by a same-lab-model classifier with ~98% headline accuracy but no reported error analysis by shot count, category, or severity; "jailbreak success" via NLL of a fixed harmful completion is a likelihood proxy, never calibrated against sampled harmful rates; "in-context learning" as the mechanism is inferred from curve shape, not measured. The insults task (rude-word detection by prompted Claude 2.0) is a particularly thin operationalisation of "harm".
-- **Statistical-conclusion validity: 2/5.** No error bars, CIs, p-values, seeds, or run counts anywhere in the fetched text; fitted power-law parameters are not numerically reported; the visual linearity of log-log plots is doing the statistical work. The consistency argument for the NLL estimator (App. B.3) is a sound asymptotic point, but finite-sample uncertainty is never quantified.
-- **Reproducibility: 2/5.** A competent reader could reimplement the attack from the description (prompts and algorithms are given in App. B), but could not reproduce the exact numbers: the helpful-only generator model is not publicly available, the generated datasets are not released in the paper, model checkpoints/snapshots are internal (Claude 2.0-family sizes unnamed), decoding settings for eval sampling are not reported, and no code is linked. The HarmBench replication (external dataset, GPT-4 classifier) is the most reproducible part.
-- **Parsimony check:** Paper's explanation — MSJ is ICL, so its power law is ICL's power law (one mechanism, two phenomena). Simplest alternative — MSJ success is driven by the model increasingly treating the faux history as the true conversation and the safety policy as inapplicable to "already-answered" content, i.e. a context-trust / role-confusion effect that need not share machinery with benign ICL. Both explain the dose–response; they differ in that the ICL account predicts the MSJ exponent tracks benign-ICL exponents across models/tasks, while the role-confusion account predicts MSJ depends on dialogue-format cues and safety-training details. The paper's format experiments (intercept shifts, slope unchanged, §3.3) slightly favour a shared, format-insensitive process, but do not separate the two. Occam does not decide here — the explanations make different predictions that were not tested.
-- **Razors applied:** Hitchens — the "universal jailbreak" suggestion (§3.4) and the claim that MSJ "cannot be fully mitigated" (Broader Impacts: "It is also possible that MSJ cannot be fully mitigated") are asserted without evidence and are marked as such; they are speculations, not findings. Alder — claims about what future, more capable models "might" do with MSJ are not testable from this paper and are set aside. Hume (causal sufficiency) — the toy model (App. G) does derive the right order of power law, so the ICL mechanism is at least quantitatively sufficient in principle; but sufficiency in a toy model is not evidence it is the actual mechanism. Popper — the power-law claims are falsifiable (see §H); the ICL-mechanism claim as stated is nearly unfalsifiable without a specified intervention, which is a weakness. Sagan — the strongest claims (power-law universality, alignment futility) carry only figure-level evidence with no uncertainty quantification, i.e. evidence below the standard the claims warrant. Hanlon — no anomalous "too good" result needs a bug/leak explanation; the one place to check would be dataset leakage (were the harmful Q–A pairs in training data?), which the paper does not address.
-- **Overall judgement:** a solid, clearly-reported attack-measurement paper whose existence/scaling findings (C1–C3, C7) are credible within their tested envelope, whose mitigation findings (C5, C6) are informative but narrower than the headline suggests (tested to 30 shots for targeted training; single category for CWD), and whose mechanism conclusion (C4) is the least supported part. Bottom line: MSJ is real, scales smoothly with shots, and resists the alignment recipes tried — but the paper does not establish that it is in-context learning per se, nor that it cannot be mitigated. Confidence: **medium** — high for "the attack works and scales", low for "it is ICL and therefore hard to fix".
+- **内部效度：3/5。**剂量–反应设计干净（各样本数共享最终目标、重叠问答对控制方差），温度混杂被明确检验（附录 E.1）。威胁：(i) 样本数数据点按构造非独立（附录 B.3），且无不确定性量化；(ii) 未报告种子 / 重复次数，运行间变异未知；(iii) 分类器与 NLL 代理随提示长度相关的偏倚未检验；(iv) 跨模型比较混杂模型身份与对齐配方及上下文上限。
+- **外部效度：3/5。**在 3 家开发者的 5 个模型、多有害类别、多格式与主题不匹配上泛化——对攻击论文而言确实广泛。不泛化到：Google 模型（未测试）、聊天界面部署（攻击需要 API 式伪造历史注入）、Claude 3 家族（博客页称正在 Claude 3 上评估缓解措施，但论文测试的是 Claude 2.0）、真实攻击者查询分布（合成数据集）、约 70k tokens / 256 个样本之外的上下文（尽管存在大得多的窗口，仍未测试）。
+- **构念效度：2/5。**“有害回复”由同实验室模型的分类器操作化，headline 准确率约 98%，但未按样本数、类别或严重程度报告误差分析；“越狱成功”经由固定有害补全的 NLL 这一似然代理，从未针对采样有害率做校准；作为机制的“上下文学习”是从曲线形状推断的，未被测量。侮辱任务（由提示的 Claude 2.0 检测粗鲁词）是对“危害”特别薄的操作化。
+- **统计结论效度：2/5。**抓取的正文中没有任何地方报告误差棒、置信区间、p 值、种子或运行次数；拟合的幂律参数未以数字报告；对数–对数图的视觉线性在承担统计工作。NLL 估计量的一致性论证（附录 B.3）是合理的渐近论点，但有限样本不确定性从未量化。
+- **可复现性：2/5。**有能力的读者可按描述重实现攻击（附录 B 给出了提示与算法），但无法复现精确数字：仅 helpful 生成模型不公开，生成的数据集未在论文中发布，模型检查点 / 快照是内部的（Claude 2.0 家族尺寸未命名），评估采样的解码设置未报告，也未链接代码。HarmBench 复现（外部数据集、GPT-4 分类器）是最可复现的部分。
+- **简约性检查：**论文的解释——MSJ 就是上下文学习，因此其幂律就是上下文学习的幂律（一个机制，两个现象）。最简单的替代解释——MSJ 成功由模型日益把伪造历史当作真实对话、把安全策略当作对“已回答”内容不再适用的东西驱动，即上下文信任 / 角色混淆效应，未必与良性上下文学习共享机制。两者都解释剂量–反应；区别在于，上下文学习解释预测 MSJ 指数在各模型 / 任务上跟踪良性上下文学习指数，而角色混淆解释预测 MSJ 依赖对话格式线索与安全训练细节。论文的格式实验（仅截距移动、斜率不变，§3.3）略微支持共享的、格式不敏感的过程，但未分离两者。奥卡姆在此无法裁决——两种解释做出不同预测，而这些预测未被检验。
+- **剃刀应用：**Hitchens——“通用越狱”建议（§3.4）与“MSJ 可能无法被完全缓解”的主张（Broader Impacts："It is also possible that MSJ cannot be fully mitigated"）在无证据下断言，已标为推测，非发现。Alder——关于未来更强模型“可能”如何使用 MSJ 的主张无法从本论文检验，已搁置。Hume（因果充分性）——玩具模型（附录 G）确实推导出了正确量级的幂律，因此上下文学习机制至少在原则上定量上充分；但玩具模型中的充分性不是它是实际机制的证据。Popper——幂律主张可证伪（见 §H）；按陈述的上下文学习机制主张若无指定干预则几乎不可证伪，这是弱点。Sagan——最强的主张（幂律普适性、对齐无效）只有图层证据且无不确定性量化，即证据低于主张应有的标准。Hanlon——没有异常“好得离谱”的结果需要 bug / 泄漏解释；唯一应检查的是数据集泄漏（有害问答对是否在训练数据中），论文未讨论。
+- **非法跳跃检查（§6A.3）：**NLL（替代指标）→ 有害回复率（硬终点）的主张在 C3 中出现，但未做校准曲线，属于已标明的跳跃；平行曲线（相关）→ 共享机制（因果）在 C4 中出现，是本篇最严重的跳跃；单项研究 → “一贯表明”未出现，论文未作跨研究概括；亚组 / 次要终点 → 获益主张未出现，CWD 结论明确限定在欺骗类别。
 
-## H. Falsifier, alternative explanations, limitations, what to watch
+### 科学价值四维 verdict
 
-**Falsifiers (one per main claim):**
-- C1: a preregistered replication on Claude 2.0 (or a successor) with human-labelled outcomes finds harmful-response rate flat (or non-monotonic) in shot count from 5 to 256 on the malicious use-cases categories.
-- C2: any of GPT-4 / Llama 2 70B / Mistral 7B shows no increase in harmful rate up to its context limit under identical MSJ prompts.
-- C3: NLL-vs-shots on a held-out harm category is better fit (by cross-validated likelihood) by a saturating exponential or a step function than by Eq. 1, or the fitted exponent differs significantly across categories beyond fit uncertainty.
-- C4: an intervention (training or inference-time) flattens the MSJ power-law exponent while leaving benign-ICL power laws unchanged — or vice versa.
-- C5: a targeted SL/RL recipe (different data mix, objective, or scale) trained and tested at 256 shots reduces harmful rate to near zero without destroying benign long-context performance.
-- C6: CWD evaluated on a different harm category, a different model, or against an adaptive attacker (warnings-aware MSJ variants) shows no reduction from the 61% baseline.
-- C7: an external HarmBench run (HarmBench's own classifier, no author involvement) finds MSJ ASR at or below PAIR's on Claude 2.0.
+- **认知价值：**它推翻了“安全训练一旦完成就能在任意长上下文中守住拒绝边界”的旧信念，代之以“拒绝随示例数平滑下滑、常规对齐只抬高截距”的新信念；证据是 C1–C3 的剂量–反应与 SL / RL 只改变截距（§5.1，图 5）；反事实是，要推翻这一结论，需要证明分类器或 NLL 代理的偏倚随样本数系统性增长、从而伪造了整条曲线（A1 / A2）。
+- **方法价值：**它留下了可复用的“固定目标 + 样本数扫描 + NLL 幂律拟合”的长上下文攻击度量范式与 HarmBench 外部复现设计，任何评估长上下文安全的人都能直接拿走用于新模型与新防御；证据是 §3–§4 的剂量–反应设计与 §7 / 附录 K 的复现；反事实是，若没有这套范式，后续工作仍只能报告单点攻击成功率，无法比较不同长度下的防御效果。
+- **边界价值：**它明确不证明 MSJ 的机制是上下文学习、不证明靶向对齐在 256 个样本下无效、也不证明 CWD 在欺骗类别之外有效，读者最易误读的推论正是“既然对齐只能抬高截距，MSJ 就无法缓解”；证据是靶向训练仅测试到 30 个样本（E12）、CWD 仅一个类别（E6）、机制检验“留待未来工作”（§4.1）；反事实是，若把边界写错、把 30 样本的结论读作 256 样本的结论，就会过早放弃本可能有效的靶向防御。
+- **启示价值：**它使“只压平 MSJ 斜率而不动良性上下文学习”的决定性检验成为可能——最便宜的决定性实验是：在 Claude 2.0（或同等长上下文模型）上做一次 256 样本的靶向抗 MSJ 微调，并以同一批良性上下文学习任务作对照，判据是：若 MSJ 指数被压平而良性指数不变，则 C4 的共享机制解释即被证伪、靶向防御成立；若两者一起移动，则共享机制得到支持；它比别的后续工作更值得先做，因为它一次实验同时裁决机制主张与缓解悲观结论，且只用论文已有的数据集、指标与拟合方法，不需新基准或新模型。
 
-**Alternative explanations (at least two, with discriminating tests):**
-1. **Role/context-trust confusion, not general ICL.** The model treats a long faux history as evidence the conversation is already in a compliant mode and that refusal is no longer the applicable policy — a dialogue-state effect, not task learning. Differs from the ICL account: predicts MSJ strength depends on dialogue-format fidelity and on safety-training details (e.g. how refusals are phrased), and predicts format changes that break "conversation" framing (e.g. non-dialogue Q&A lists) should weaken MSJ more than benign ICL. The paper's format variants shift only the intercept, which cuts against a pure format story — but all variants retain a Q–A list structure, so the test is weak. Discriminator: MSJ with demonstrations stripped of all dialogue/role markers vs benign ICL with the same stripping.
-2. **Classifier/NLL measurement artefact that grows with prompt length.** Longer prompts may (a) push the model toward longer, more detailed completions that the refusal classifier scores as harmful, or (b) lower the NLL of any long, detailed completion, harmful or not. Differs from the paper's account: predicts the NLL of *benign* completions to the same target questions also falls with shots, and predicts human labelling diverges from classifier labelling specifically at high shot counts. Discriminator: human-labelled harmful rates stratified by shot count, plus NLL of benign completions as a control series (the paper reports benign-completion NLL only in the SL/RL training analysis, Fig. 6 right, not as a control for the main scaling result).
-3. **Dataset self-similarity.** Attack demos and target answers come from the same helpful-only generator, so the model may simply be continuing a stylistic/distributional pattern (same phrasing, same generator quirks) rather than learning "harmfulness". Differs: predicts MSJ weakens sharply when demos come from a different generator (human-written or another model) than the target completion. Discriminator: cross-generator MSJ (human-written demos → model-generated target distribution and vice versa). The HarmBench replication (human/benchmark-sourced behaviours) partially addresses this and still finds strong MSJ, which weakens — but does not eliminate — this alternative, since HarmBench demo answers were also model-generated compliant responses harvested from evaluation data.
+**总体判断：**这是一篇扎实、报告清晰的攻击测量论文，其存在性 / 扩展性发现（C1–C3、C7）在测试范围内可信，其缓解发现（C5、C6）有信息量但比 headline 狭窄（靶向训练测试到 30 个样本；CWD 为单类别），其机制结论（C4）是支持最弱的部分。底线：MSJ 真实存在、随样本数平滑扩展、能抵抗尝试过的对齐配方——但论文并未确立它就是上下文学习本身，也未确立它无法被缓解。置信度：**中**——对“攻击有效且可扩展”为高，对“它是上下文学习、因此难修复”为低。
 
-**Author-stated limitations (quoted/paraphrased with location):**
-- "While testing these prototypical mechanisms is left for future work" (§4.1) — mechanism untested.
-- "Our results do not reject the idea that qualitative changes to existing finetuning pipelines might prove more effective against MSJ" (§5.3).
-- "Future work should evaluate the safety-capability trade-offs of Cautionary Warning Defense" (§5.4).
-- "It is also possible that MSJ cannot be fully mitigated" (Broader Impacts) — stated as a possibility, not a finding.
-- App. K.4 confounders: low-ASR semantic categories have the fewest unique behaviours and lowest prefix representation, "causing us to under-report the effectiveness of MSJ"; low ASR per category "should not be taken as evidence of model robustness".
-- Google DeepMind models unevaluated for logprob reasons (§3.3, fn. 1).
-- No dedicated Limitations section exists in the paper.
+## H. 证伪器、替代解释、接下来看什么
 
-**Analyst-found limitations (not stated by authors):**
-- No seeds, repetitions, error bars, CIs, p-values, or compute reporting; fitted power-law parameters not numerically reported.
-- Targeted mitigation tested only to 30 shots while the attack is demonstrated to 256 shots; the long-context mitigation claim is extrapolation via the exponent.
-- Category inconsistency: §3.1/App. B.1.1 list four malicious-use-case categories, but Table 1 and Fig. 3 include "discrimination" as a fifth; the exact category set and counts are unclear.
-- The helpful-only generator model is not public and the generated datasets are not released; exact reproducibility is blocked.
-- CWD tested on one category (deception), one model, one shot count in text (205), with no capability cost and no adaptive attacker.
-- No leakage/contamination analysis for the synthetic datasets; no human audit of classifier errors by shot count.
-- Blog page (2024-04-02, updated 2026-11-13) says mitigations were put in place on Anthropic systems and Claude 3 was being evaluated, but the paper itself contains no Claude 3 results and no deployed-mitigation evaluation.
+**接下来看什么（排第一的为 §G 启示价值中的最便宜决定性实验）：**
+1. **256 样本靶向抗 MSJ 微调 + 良性上下文学习对照（最便宜的决定性实验）：**在 Claude 2.0（或同等长上下文模型）上，用 MSJ 示例做靶向微调并测试到 256 个样本，同时在同一批良性上下文学习任务（附录 D.2）上测量幂律指数；判据：若 MSJ 指数被压平而良性指数不变，则 C4 的共享机制解释被证伪、靶向防御成立；若两者一起移动，则共享机制得到支持；若 MSJ 有害率在 256 个样本下降至接近零而良性长上下文表现完好，则 C5 的悲观结论被翻转。
+2. 用能力权衡与自适应（知晓警告的）攻击者评估 CWD（或任何输入净化防御）。
+3. 外部预注册复现，按样本数分层做人工标注（检验 A1 / A2）。
+4. 分离 MSJ 与良性上下文学习的机制工作——例如只压平 MSJ 指数的防御（后续文献中经搜索找到的 Ackerman & Panickssery 2025 "Mitigating Many-Shot Jailbreaking" 声称在 Llama 3.1-8B 上微调 + 净化可压平斜率，直接挑战 C5，晚于本论文，应接着读；本深挖未核实）。
+5. 幂律是否保持到完整上下文窗口（200k+ tokens）与当前模型，以及“通用越狱”（多样化跨主题示例）是否出现。
+6. 后续：博客页提到的 Claude 3 时代已部署缓解措施——本论文中无数据。
 
-**What to watch next:**
-- A 256-shot (or full-context) test of a model trained with targeted anti-MSJ data — the direct test of C5 that this paper does not run.
-- CWD (or any input-sanitisation defence) evaluated with capability trade-offs and against an adaptive, warning-aware attacker.
-- An external, preregistered replication with human labelling stratified by shot count (tests A1/A2).
-- Mechanistic work separating MSJ from benign ICL — e.g. a defence that flattens the MSJ exponent alone (later literature found via search, Ackerman & Panickssery 2025 "Mitigating Many-Shot Jailbreaking", claims fine-tuning + sanitisation does flatten the slope on Llama 3.1-8B — a direct challenge to C5 that postdates this paper and should be read next; not verified in this deep dive).
-- Whether the power law holds to full context windows (200k+ tokens) on current models, and whether the "universal jailbreak" (diverse cross-topic demos) materialises.
-- Follow-up: the Claude 3-era deployed mitigations mentioned on the blog page — no data in this paper.
+**证伪器（每个主要主张一个）：**
+- C1：在 Claude 2.0（或后继模型）上做预注册复现，用人工标注结果，发现恶意用例类别上 5 到 256 个样本的有害回复率持平（或非单调）。
+- C2：GPT-4 / Llama 2 70B / Mistral 7B 中任一模型在相同 MSJ 提示下直到其上下文上限有害率均无上升。
+- C3：在留出的有害类别上，NLL–样本数关系经交叉验证似然比较，饱和指数或阶跃函数的拟合优于公式 1，或拟合指数在类别间差异超出拟合不确定性。
+- C4：某种干预（训练或推理时）压平 MSJ 幂律指数而保持良性上下文学习幂律不变——或反之。
+- C5：一种靶向 SL / RL 配方（不同数据混合、目标或规模）在 256 个样本上训练并测试，在不破坏良性长上下文表现的前提下把有害率降至接近零。
+- C6：在另一有害类别、另一模型上评估 CWD，或针对自适应攻击者（知晓警告的 MSJ 变体），发现相对 61% 基线无降低。
+- C7：外部 HarmBench 运行（HarmBench 自身分类器，无作者参与）发现 Claude 2.0 上 MSJ 的 ASR 达到或低于 PAIR。
 
-**Open questions (can't tell from the source):**
-- Exact fitted power-law exponents, C and K values per task/model (figures only, not legible in text).
-- Eval sampling temperature/decoding settings, number of sampled responses per prompt, and number of independent runs.
-- Parameter counts of the Claude 2.0-family size variants in §4.2.
-- Whether the malicious-use-case categories are four or five, and the per-category question counts.
-- The arXiv identity of this paper (see Unverified section).
-- Whether the helpful-only generator's outputs overlap Anthropic training data.
+**替代解释（至少两个，含区分检验）：**
+1. **角色 / 上下文信任混淆，而非一般上下文学习。**模型把长伪造历史当作对话已进入依从模式的证据，认为拒绝不再是适用策略——这是对话状态效应，而非任务学习。与上下文学习解释的区别：预测 MSJ 强度依赖对话格式保真度与安全训练细节（例如拒绝如何措辞），预测破坏“对话”框架的格式变化（例如非对话问答列表）应比削弱良性上下文学习更能削弱 MSJ。论文的格式变体只移动截距，这不利于纯格式解释——但所有变体都保留问答列表结构，因此检验很弱。区分检验：剥离全部对话 / 角色标记的 MSJ vs 同样剥离的良性上下文学习。
+2. **随提示长度增长的分类器 / NLL 测量伪影。**更长提示可能 (a) 推动模型给出更长、更详细的补全，拒绝分类器将其判为有害，或 (b) 降低任何长而详细补全（有害与否）的 NLL。与论文解释的区别：预测同一目标问题的*良性*补全的 NLL 也随样本数下降，预测人工标注在高样本数下专门与分类器标注分歧。区分检验：按样本数分层的人工标注有害率，加上良性补全 NLL 作为对照序列（论文仅在 SL / RL 训练分析中报告良性补全 NLL，图 6 右侧，未作为主要标度结果的对照）。
+3. **数据集自相似。**攻击示例与目标答案来自同一仅 helpful 生成器，模型可能只是在续写风格 / 分布模式（相同措辞、相同生成器特征），而非学习“有害性”。区别：预测当示例来自与目标补全不同的生成器（人类书写或另一模型）时 MSJ 急剧减弱。区分检验：跨生成器 MSJ（人类书写示例 → 模型生成目标分布，反之亦然）。HarmBench 复现（人类 / 基准来源的行为）部分处理了这一点且仍发现强 MSJ，这削弱了——但未消除——该替代解释，因为 HarmBench 示例答案也是从评估数据中收获的模型生成依从回复。
 
-## Unverified / could not verify
+**作者自述局限（引用 / 转述，附位置）：**
+- "While testing these prototypical mechanisms is left for future work"（§4.1）——机制未检验。
+- "Our results do not reject the idea that qualitative changes to existing finetuning pipelines might prove more effective against MSJ"（§5.3）。
+- "Future work should evaluate the safety-capability trade-offs of Cautionary Warning Defense"（§5.4）。
+- "It is also possible that MSJ cannot be fully mitigated"（Broader Impacts）——表述为可能性，非发现。
+- 附录 K.4 的混杂因素：低 ASR 语义类别的独特行为最少、前缀代表性最低，“导致我们低报 MSJ 的有效性”；每类别低 ASR “不应被当作模型稳健的证据”。
+- Google DeepMind 模型因对数概率原因未评估（§3.3，脚注 1）。
+- 论文中无专门的 Limitations 一节。
 
-- **arXiv ID 2404.01818 — NOT VERIFIED, do not cite as the ID of this paper.** The Anthropic page and the full PDF as fetched contain no arXiv identifier. Two web searches (2026-11-23) for the paper on arXiv returned no arxiv.org record for Anil et al.'s "Many-shot Jailbreaking" itself — only later papers citing it (e.g. arXiv:2504.09604, arXiv:2406.01288v2, arXiv:2411.07494v1) and a search result pointing to the Anthropic CDN PDF. The commonly cited arXiv:2404.01818 was therefore **not** confirmed and is not used anywhere in this deep dive.
-- **Official links verified:** https://www.anthropic.com/research/many-shot-jailbreaking (fetched, 2026-11-23) and the linked full-paper PDF https://assets.claude.com/af5633c94ed2beb282f6a53c595eb437e8e7b630.pdf (fetched in full, 2,790 lines). No other official link (e.g. code or dataset release) was found in either source.
-- **Numbers that could not be verified against the primary source:** all precise per-model/per-category percentages and fitted power-law parameters that exist only inside figure interiors (Figs. 2–17), because the PDF text extraction garbles figure interiors; listed in §E as E13 and in the ledger note. No such number is presented as established in this file.
-- **Peer-review status:** could not verify any peer review; the paper is presented as an Anthropic research publication, not a journal/conference paper.
-- **Later follow-up claim noted but not verified here:** Ackerman & Panickssery (2025), "Mitigating Many-Shot Jailbreaking" (arXiv:2504.09604, found via search), reports results running counter to this paper's mitigation conclusion; its claims were not read or verified in this deep dive.
+**分析者发现的局限（作者未说明）：**
+- 无种子、重复次数、误差棒、置信区间、p 值或算力报告；拟合的幂律参数未以数字报告。
+- 靶向缓解仅测试到 30 个样本，而攻击展示到 256 个样本；长上下文缓解主张是经由指数的外推。
+- 类别不一致：§3.1 / 附录 B.1.1 列出四个恶意用例类别，但表 1 与图 3 包含 "discrimination" 作为第五个；精确类别集与数量不明。
+- 仅 helpful 生成模型不公开，生成的数据集未发布；精确可复现性受阻。
+- CWD 仅在一个类别（欺骗）、一个模型、正文一个样本数（205）上测试，无能力代价，无自适应攻击者。
+- 对合成数据集无泄漏 / 污染分析；无按样本数分层的分类器误差人工审计。
+- 博客页（2024-04-02，更新于 2026-11-13）称已在 Anthropic 系统部署缓解措施并正在 Claude 3 上评估，但论文本身无 Claude 3 结果，也无已部署缓解措施的评估。
+
+**未解问题（从来源中无法确定）：**
+- 每任务 / 模型拟合的幂律指数、C 与 K 精确值（仅图内，文本中无法辨认）。
+- 评估采样温度 / 解码设置、每提示采样回复数、独立运行次数。
+- §4.2 中 Claude 2.0 家族尺寸变体的参数量。
+- 恶意用例类别是四个还是五个，及每类问题数。
+- 本论文的 arXiv 身份（见未核实一节）。
+- 仅 helpful 生成器的输出是否与 Anthropic 训练数据重叠。
+
+## 未核实 / 未能核实
+
+- **arXiv ID 2404.01818——未核实，请勿引用为本论文的 ID。**Anthropic 页面与抓取的全文 PDF 均不含 arXiv 标识。2026-11-23 两次网页搜索均未在 arXiv 上找到 Anil 等人 "Many-shot Jailbreaking" 本身的 arxiv.org 记录——只找到引用它的后续论文（例如 arXiv:2504.09604、arXiv:2406.01288v2、arXiv:2411.07494v1）与指向 Anthropic CDN PDF 的搜索结果。因此常被引用的 arXiv:2404.01818 未获确认，本深挖中未使用。
+- **已核实的官方链接：**https://www.anthropic.com/research/many-shot-jailbreaking（2026-11-23 已抓取）与链接的全文论文 PDF https://assets.claude.com/af5633c94ed2beb282f6a53c595eb437e8e7b630.pdf（已全文抓取，2,790 行）。两个来源中均未发现其他官方链接（例如代码或数据集发布）。
+- **无法对照原始来源核实的数字：**所有仅存在于图内的精确每模型 / 每类别百分比与拟合幂律参数（图 2–17），因为 PDF 文本提取会错乱图内内容；已在 §E 中列为 E13 与台账说明。本文件未把任何此类数字当作已确立的结论。
+- **同行评审状态：**无法核实任何同行评审；该论文以 Anthropic 研究出版物呈现，非期刊 / 会议论文。
+- **后续跟进主张已注明但未在此核实：**Ackerman & Panickssery (2025), "Mitigating Many-Shot Jailbreaking"（arXiv:2504.09604，经搜索找到），报告了与本论文缓解结论相反的结果；其主张未在本深挖中阅读或核实。

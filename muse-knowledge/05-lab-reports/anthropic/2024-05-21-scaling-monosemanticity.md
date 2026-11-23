@@ -1,346 +1,386 @@
-# Scaling Monosemanticity: Extracting Interpretable Features from Claude 3 Sonnet
-> ID: MK-20261123-LR-003 · Version: v1.0 · Created: 2026-11-23 · Updated: 2026-11-23
-> Status: Draft (deep dive, primary source read 2026-11-23)
-> Official links: https://www.anthropic.com/research/mapping-mind-language-model ; https://transformer-circuits.pub/2024/scaling-monosemanticity/index.html
-> Related: MK-20261123-EM-002 (close-reading tool)
+# Scaling Monosemanticity: Extracting Interpretable Features from Claude 3 Sonnet —— 扩展单义性：从 Claude 3 Sonnet 中提取可解释特征
+> ID：MK-20261123-LR-003 · 版本：v2.0 · 创建：2026-11-23 · 更新：2026-11-23
+> 变更记录：2026-11-23：改写为中文，按精读工具 v2.0 补科学问题还原与为什么链、科学价值评估。
+> 状态：草稿（深度精读，原始资料读于 2026-11-23）
+> 官方链接：https://www.anthropic.com/research/mapping-mind-language-model ；https://transformer-circuits.pub/2024/scaling-monosemanticity/index.html
+> 相关：MK-20261123-EM-002（精读工具）
 
-> Method note: Both primary sources were read in full as fetched text on 2026-11-23 (Anthropic blog page, 131 lines; Transformer Circuits paper, 1,823 lines). This is a text fetch, not a live browser visit; interactive figures, plots, and the interactive feature browser / UMAP could not be read from the fetched text, and any number that lives only inside a figure is marked as not verifiable from the text fetch (see "Unverified / could not verify"). No secondary summary was used for any number. No RSI/harness framing is used: this is a general frontier interpretability report.
+> 方法说明：两份原始资料均于 2026-11-23 以抓取文本形式全文读完（Anthropic 博客页，131 行；Transformer Circuits 论文，1,823 行）。这是文本抓取，不是实时浏览器访问；交互式图表、绘图以及交互式特征浏览器 / UMAP 无法从抓取文本中读取，任何只存在于图中的数字都标记为无法从文本抓取中核实（见"未核实 / 未能核实"一节）。未用任何二手总结核实任何数字。不使用 RSI/harness 框架：这是一份通用前沿可解释性报告。
 
-## A. Identification
+## A. 识别
 
-| Field | Value |
+| 字段 | 内容 |
 |---|---|
-| Title | Scaling Monosemanticity: Extracting Interpretable Features from Claude 3 Sonnet |
-| Companion blog title | Mapping the mind of a large language model |
-| Authors (BibTeX order, 22 names) | Adly Templeton, Tom Conerly, Jonathan Marcus, Jack Lindsey, Trenton Bricken, Brian Chen, Adam Pearce, Craig Citro, Emmanuel Ameisen, Andy Jones, Hoagy Cunningham, Nicholas L. Turner, Callum McDougall, Monte MacDiarmid, C. Daniel Freeman, Theodore R. Sumers, Edward Rees, Joshua Batson, Adam Jermyn, Shan Carter, Chris Olah, Tom Henighan |
-| Venue | Transformer Circuits Thread (Anthropic interpretability team's publication venue), 2024; companion post on anthropic.com/research |
-| Date | 2024-05-21 (blog page metadata: Published 2024-05-21T00:00:00.000Z; updated 2026-11-13T22:37:05.592Z — the update timestamp is a page-metadata timestamp, not a paper revision) |
-| Version | No arXiv version; no version number stated. Transformer Circuits Thread article, cited as: Templeton, et al., "Scaling Monosemanticity: Extracting Interpretable Features from Claude 3 Sonnet", Transformer Circuits Thread, 2024 |
-| Model studied | Claude 3 Sonnet, version 3.0, released 2024-03-04; "the exact model in production as of the writing of this paper"; the finetuned model, not the base pretrained model (authors state the method also works on the base model) |
-| Model size | Not reported — explicitly withheld for proprietary reasons ("not reporting the size of the model, leaving units off certain plots, and using a simplified tokenizer") |
-| Peer review | Not peer-reviewed; lab-published research report / thread article |
-| Code / data release | No code release and no SAE weights release stated in the paper text as read. Feature visualizations are published via an interactive feature browser (linked in the paper); dataset examples come from The Pile (excluding "books3") and Common Crawl for visualization |
-| Analyst / analysis date | Deep dive created 2026-11-23 |
-| Passes | Three-pass read per MK-20261123-EM-002: pass 1 (titles, abstract-equivalent, key results, conclusions), pass 2 (full text, all sections including appendix, methods, limitations), pass 3 (lightweight virtual re-implementation check: what would be needed to redo the headline results — see §G reproducibility) |
-| Type | Existing-system analysis / measurement study of a deployed production model, plus methods (scaling-law) study of sparse autoencoders. Not a benchmark paper, not a theory paper, not a dataset paper |
-| Predecessor (pre-window, for context only) | Bricken et al., "Towards Monosemanticity: Decomposing Language Models With Dictionary Learning", Transformer Circuits Thread, 2023-10-05 (one-layer toy transformer). Individual slug not extracted — the predecessor URL is not verified in this deep dive beyond the transformer-circuits.pub domain |
+| 标题 | Scaling Monosemanticity: Extracting Interpretable Features from Claude 3 Sonnet |
+| 配套博客标题 | Mapping the mind of a large language model |
+| 作者（按 BibTeX 顺序，22 人） | Adly Templeton, Tom Conerly, Jonathan Marcus, Jack Lindsey, Trenton Bricken, Brian Chen, Adam Pearce, Craig Citro, Emmanuel Ameisen, Andy Jones, Hoagy Cunningham, Nicholas L. Turner, Callum McDougall, Monte MacDiarmid, C. Daniel Freeman, Theodore R. Sumers, Edward Rees, Joshua Batson, Adam Jermyn, Shan Carter, Chris Olah, Tom Henighan |
+| 发表地 | Transformer Circuits Thread（Anthropic 可解释性团队的发表渠道），2024 年；配套文章发表于 anthropic.com/research |
+| 日期 | 2024-05-21（博客页元数据：Published 2024-05-21T00:00:00.000Z；updated 2026-11-13T22:37:05.592Z——更新时间戳是页面元数据时间戳，不是论文修订） |
+| 版本 | 无 arXiv 版本；未声明版本号。Transformer Circuits Thread 文章，引用格式为：Templeton, et al., "Scaling Monosemanticity: Extracting Interpretable Features from Claude 3 Sonnet", Transformer Circuits Thread, 2024 |
+| 研究模型 | Claude 3 Sonnet，版本 3.0，发布于 2024-03-04；"写作本文时生产中的确切模型"；是微调（finetuned）模型，不是基础预训练模型（作者称该方法在基础模型上也适用） |
+| 模型规模 | 未报告——出于专有原因明确 withheld（"not reporting the size of the model, leaving units off certain plots, and using a simplified tokenizer"） |
+| 同行评审 | 未经同行评审；实验室发布的研究报告 / thread 文章 |
+| 代码 / 数据发布 | 论文正文（按所读版本）未声明发布代码，也未声明发布 SAE 权重。特征可视化通过交互式特征浏览器发布（论文内有链接）；可视化用的数据集示例来自 The Pile（不含 "books3"）和 Common Crawl |
+| 分析者 / 分析日期 | 深度精读创建于 2026-11-23 |
+| 阅读遍数 | 按 MK-20261123-EM-002 的三遍法：第 1 遍（标题、摘要等价部分、关键结果、结论），第 2 遍（全文，包括附录、方法、局限），第 3 遍（轻量虚拟重实现检查：重做标题结果需要什么——见 §G 可复现性） |
+| 类型 | 对已部署生产模型的现有系统分析 / 测量研究，外加稀疏自编码器（sparse autoencoder, SAE）的方法（扩展定律，scaling-law）研究。不是基准论文，不是理论论文，不是数据集论文 |
+| 前作（窗口期之前，仅作背景） | Bricken et al., "Towards Monosemanticity: Decomposing Language Models With Dictionary Learning", Transformer Circuits Thread, 2023-10-05（单层玩具 transformer）。未提取单个 slug——除 transformer-circuits.pub 域名外，前作 URL 在本精读中未核实 |
 
-## B. Question & claims (five Cs)
+## B. 问题与主张（五 C + 科学问题还原 + 为什么链）
 
-### Research question (one sentence, analyst's words)
+### 研究问题（一句话，分析者自己的话）
 
-Can sparse autoencoders (dictionary learning) scale from a one-layer toy transformer to a production-grade large language model — Claude 3 Sonnet — and recover interpretable, monosemantic features that both respond to and causally influence abstract model behavior?
+稀疏自编码器（sparse autoencoder，字典学习 dictionary learning）能否从单层玩具 transformer 扩展到生产级大语言模型——Claude 3 Sonnet——并恢复出可解释的单义特征（monosemantic feature），这些特征既能响应抽象模型行为，又能因果地影响抽象模型行为？
 
-PICO-style restatement: System — Claude 3 Sonnet (3.0, finetuned, production) residual-stream activations at the middle layer; Intervention — training sparse autoencoders (SAEs) of 1M / 4M / 34M features on those activations; Comparison — (a) the 2023 toy-model result, (b) individual MLP neurons / residual-stream basis directions, (c) few-shot linear-probe steering vectors; Outcome — interpretable features, scaling-law behavior of SAE loss, causal steering effects, safety-relevant features.
+PICO 式改述：系统——Claude 3 Sonnet（3.0，微调版，生产模型）中间层的残差流（residual stream）激活；干预——在这些激活上训练 1M / 4M / 34M 特征的稀疏自编码器；对照——(a) 2023 年玩具模型结果，(b) 单个 MLP 神经元 / 残差流基方向，(c) 少样本线性探针（linear probe）引导向量；结果——可解释特征、SAE 损失的扩展定律行为、因果引导效应、安全相关特征。
 
-### Five Cs (pass 1)
+### 五 C（第 1 遍）
 
-- **Category:** Measurement / existing-system analysis of a deployed model + methods scaling study.
-- **Context:** Builds directly on Towards Monosemanticity (2023), on the linear representation hypothesis and superposition hypothesis, and on dictionary learning / sparse autoencoders. Motivated by the open question of whether SAE methods "work for large models" or fail for engineering or fundamental reasons.
-- **Correctness (first-pass impression):** The headline existence claims (interpretable features exist at scale; steering works) are supported by concrete demonstrations; the quantitative claims (how interpretable features are in general, scaling-law exponents) rest largely on figures and on a proxy loss whose link to interpretability the authors themselves flag as uncertain.
-- **Contributions (claimed):** First detailed look inside a modern production-grade LLM; scaling laws for SAE training; highly abstract (multilingual, multimodal, concrete–abstract generalizing) features; feature geometry / frequency–dictionary-size relationship; steering via features; safety-relevant features.
-- **Clarity:** 4/5. The paper is long but clearly structured (scaling → interpretability → survey → computational intermediates → search → safety → discussion/limitations → related work → appendix). Clarity is reduced by withheld model details (size, layer index, units off plots) and by key quantitative results living only in figures.
+- **类别（Category）：** 对已部署模型的测量 / 现有系统分析 + 方法扩展研究。
+- **背景（Context）：** 直接建立在 Towards Monosemanticity（2023）、线性表征假设（linear representation hypothesis）与叠加假设（superposition hypothesis）、字典学习 / 稀疏自编码器之上。动机是悬而未决的问题：SAE 方法对大模型是否"管用"，还是会因工程原因或根本原因而失败。
+- **正确性（Correctness，第 1 遍印象）：** 标题性的存在主张（大规模下存在可解释特征；引导有效）有具体演示支撑；定量主张（特征总体上多可解释、扩展定律指数）很大程度上依赖图表，以及一个作者自己也指出与可解释性联系不确定的代理损失（proxy loss）。
+- **贡献（Contributions，声称的）：** 首次细致观察现代生产级 LLM 内部；SAE 训练的扩展定律；高度抽象的特征（多语言、多模态、具体–抽象泛化）；特征几何 / 频率–字典大小关系；通过特征引导；安全相关特征。
+- **清晰度（Clarity）：** 4/5。论文很长但结构清晰（扩展 → 可解释性 → 调查 → 计算中间量 → 搜索 → 安全 → 讨论/局限 → 相关工作 → 附录）。清晰度因 withheld 的模型细节（规模、层索引、图中去掉单位）和关键定量结果只存在于图中而降低。
 
-### Main claims (numbered)
+### 科学问题还原：五问（分析者自己的话，按 §6A.2）
 
-- **C1 — SAEs scale to production models.** Sparse autoencoders produce interpretable features for Claude 3 Sonnet; scaling laws can guide SAE training (loss decreases approximately as a power law in compute; compute-optimal features and steps scale approximately as power laws). (Key Results; Scaling Dictionary Learning)
-- **C2 — Features are highly abstract.** Features are multilingual, multimodal (text-trained SAEs generalize to images), and generalize between concrete and abstract instantiations of the same concept (e.g. code security vulnerabilities vs. abstract discussion of them). (Key Results; Assessing Feature Interpretability; Feature Survey)
-- **C3 — Frequency–dictionary-size relationship.** There is a systematic relationship between a concept's frequency and the dictionary size needed to resolve a feature for it; the frequency at which a dictionary becomes >50% likely to include a concept is consistently slightly lower than the inverse of the number of alive features; rescaling by alive-feature count makes the curves approximately overlap (sigmoid-like in log-frequency). (Key Results; Feature Survey)
-- **C4 — Features causally steer behavior.** Clamping features to artificially high/low values changes model outputs in ways consistent with their interpretations — including inducing errors, overriding refusals/safeguards, and altering demeanor, preferences, and stated goals. (Key Results; Assessing Feature Interpretability; Safety-Relevant Features)
-- **C5 — Features expose intermediate computation.** Attribution (and ablation) over SAE features reveals causally relevant intermediate steps of multi-step inference (e.g. Kobe Bryant → California → capital → Sacramento). Attribution correlates much more strongly with ablation than raw activation does. (Features as Computational Intermediates)
-- **C6 — Safety-relevant features exist and are causal.** Features related to security vulnerabilities/backdoors, bias, sycophancy, deception/power-seeking, and dangerous/criminal content (including bioweapons, scam email) exist and causally influence outputs when steered. (Key Results; Safety-Relevant Features)
-- **C7 — Features beat neurons and few-shot probes (in the few-shot regime).** Random SAE features are significantly more interpretable/specific than random MLP neurons, and feature steering succeeds in cases where few-shot probe steering vectors fail (5 of 7 case studies; 2 of 7 ties). (Assessing Feature Interpretability; Searching for Specific Features / appendix)
-- **C8 — Geometry mirrors semantics.** Distance (cosine similarity) between feature decoder vectors maps roughly onto conceptual relatedness; features split into finer-grained features as dictionary size grows (e.g. one "San Francisco" feature in the 1M SAE → 2 in the 4M SAE → 11 in the 34M SAE). (Feature Survey)
-- **C9 — Cautious scope claim (authors' own).** The mere existence of safety-relevant features should not update views on how dangerous models are; the work does not show any feature is actually useful for safety; it only shows plausibly useful features exist. (Safety-Relevant Features; Discussion)
+1. **反常 / 现象是什么？** 2023 年的玩具模型证明了 SAE 能把单层小 transformer 分解出单义特征，但没人知道这套方法搬到生产级大模型上会怎样：是工程上做不到，还是根本上失效。与此同时，生产模型内部完全是黑箱——我们甚至不知道"模型是否用可分离的特征来表征概念"这一点在大模型上是否成立。反常在于：小模型上成立的方法论，在大模型上没有任何证据。
+2. **为什么重要，不解决会怎样？** 对领域：若 SAE 在大模型上失效，"把模型拆成可读特征"这条最有希望的可解释性路线就断了，内部机制研究只能停留在玩具演示上；对实践：若可行，就可能获得检查、引导甚至纠正模型行为的手段，安全工作就有了抓手。不解决它，关于部署模型的内部机制我们什么都说不了，安全评估只能看输入输出。
+3. **为什么之前做不了 / 没做？** 卡住的点有三层：工程上，在生产模型的残差流上训练百万/千万级字典需要并行计算与超参搜索方法，没有扩展定律指导调参成本太高；概念上，不知道叠加假设在真实大模型上是否成立；获取上，需要实验室内部才能拿到的生产模型内部激活。真正的 blocker 是"没有可控的规模化手段"——这篇工作移走的石头正是这一块：用扩展定律扫参解决"怎么训大字典"，用生产模型真实激活解决"在什么上训"。
+4. **为什么这个方法 / 设计能回答这个问题？** 方法与问题的匹配点不在"方法新"，而在它恰好绕过了第 3 问的 blocker：SAE 直接作用于生产模型的真实激活，用字典学习把叠加的特征拆开；扩展定律扫参（特征数 × 训练步数）让大字典的训练成本可控；夹住特征（clamping）引导 + 归因（attribution）/ 消融（ablation）对照提供因果检验，不只看激活相关。如果方法回答的是另一个更容易的问题（例如只在小模型上重复），这里应明说——本文没有，它直接上了生产模型。
+5. **答案改变了什么认知或实践？** 认知上，证实了"大模型内部存在可分离、可解释、可干预的抽象特征"这一存在性，推翻了"SAE 只在玩具模型上有效"的怀疑；但没有改变"有多少特征可解释、是否能用于安全"的判断——这两点仍未测量。实践上，留下了 SAE 规模化训练范式与特征浏览器，但安全用途仍未被证明，论文自己的 C9 明说这一点。
 
-### Claimed vs. actually supported
+### 为什么链（按 §6A.1；只追最承重的两个主张）
 
-- Existence claims (C1 in its qualitative form, C2, C4, C6 as existence + steering demonstrations) are directly supported by worked examples in the text.
-- The quantitative scaling-law claim (C1 quantitative form) is stated only qualitatively in the text ("approximately according to a power law"); no exponents are given in the fetched text — the numbers live in figures.
-- C3 is supported by a described analysis (100–200 concepts per category, four categories) but the threshold values live in figures.
-- C7's "significantly more interpretable" is stated without numeric effect sizes in the text; the distributions live in histograms (figures).
-- C9 is a deliberate scope limitation, and it is the claim the authors most insist on; the blog post's framing ("could, in future, help us make AI models safer") is more forward-leaning than the paper's own caution.
+**链 1：针对 C1——SAE 能扩展到生产模型（定性存在部分）**
 
-## C. Assumptions map (first principles)
+| 层 | 为什么……？ | 因为…… | 证据 / 位置 | 状态 |
+|---|---|---|---|---|
+| 1 | （现象层）为什么 SAE 能在 Sonnet 上训出可解释特征？ | 三组 SAE（1M / 4M / 34M）都训出来了：每 token 平均活跃特征 < 300，重建解释 ≥ 65% 的激活方差，且出现金门大桥、代码错误等可解释特征 [FACT: Scaling Dictionary Learning 节；Assessing Feature Interpretability 节] | 论文正文 | 已验证（数字与示例层面） |
+| 2 | （机制层）为什么这个规模下仍能保持稀疏且可重建？ | 因为字典学习用超完备字典 + L1 稀疏约束去拟合残差流激活：如果概念确实以近似正交的方向叠加在激活空间里，一个足够大的稀疏字典就能把它们拆开 [GUESS：分析者补，依赖 §C 的 A1 线性表征假设与 A2 叠加假设；作者未在正文给出这一机制的直接检验] | §C 的 A1、A2 | 假设——未验证 |
+| 3 | （根层）为什么"可拆开"在更深层次上是可能的？ | 只有当 A1（概念是激活空间中的方向）与 A2（特征数多于维度，靠近似正交叠加）成立时，SAE 的解码器方向才有理由对应概念；否则字典方向只是拟合残差的任意基 [FACT: §C 的 A1、A2 为全篇根假设] | §C 的 A1、A2 | 承重假设——未验证。这是链 1 的终点：结论的成立条件写在这里 |
+| 3' | （分叉）如果特征不是模型真实的方向呢？ | 分支 A（作者的解释）：特征是模型内部真实的因果变量；分支 B（替代解释，见 §H 替代解释 2）：特征部分是 SAE 优化（L1 稀疏 + ReLU + 字典大小）切割激活空间造出的"看起来可解释"的方向，模型本身未必这样用它们。两个分支对展示案例的预测相同，现有数据区分不了 | 分支 A：全文；分支 B：分析者补，见 §H | **未回答**——论文没有跨种子 / 跨目标函数的特征复现对照 |
 
-| # | Assumption (paraphrase + location) | Type | Load-bearing? | Evidence in paper | What would break it |
+自下而上复核（倒读）："A1、A2 成立，因此稀疏字典能拆出方向，因此三组 SAE 稀疏且可重建，因此出现可解释特征"——第 2 层到第 1 层的推导缺口在于：稀疏可重建并不蕴含"方向 = 概念"，缺口位置就是 A5（从 top 激活示例做解释）与 A3（损失作代理）。
+
+**链 2：针对 C4/C6——特征能因果引导行为（含安全相关行为）**
+
+| 层 | 为什么……？ | 因为…… | 证据 / 位置 | 状态 |
+|---|---|---|---|---|
+| 1 | （现象层）为什么夹住特征会改变输出？ | 把特征夹到观测最大值的 5×–20× 后，输出按解释方向变化：金门大桥特征 10× → 模型自认是金门大桥；奉承特征 5× → 过度赞美；仇恨特征 20× → 种族主义长篇 [FACT: Assessing Feature Interpretability 节；Safety-Relevant Features 节] | 论文正文 | 已验证（演示层面） |
+| 2 | （机制层）为什么大幅夹住会改变行为？ | 这里分叉——分支 A（作者的解释）：被夹的特征是模型的因果变量，沿该方向移动残差流会改变下游计算，从而改变输出；分支 B（替代解释，见 §H 替代解释 1）：任何足够大的方向扰动都会把激活推离训练分布，模型对离分布扰动的通用反应就是"主题化"漂移，实验者的解释只是事后贴标签。两个分支对展示案例的预测相同 | 分支 A：Safety-Relevant Features 节；分支 B：分析者补 | **未回答**——论文没有报告匹配幅度的随机方向夹住对照，两个分支现有数据区分不了 |
+| 3 | （根层）为什么这个区分重要？ | 如果分支 A 为真，特征就是可干预的因果杠杆，安全干预（监测、引导）有抓手；如果分支 B 为真，引导演示只是扰动伪影，正常幅度下的特征因果作用仍未知，安全含义也随之消失 [GUESS：分析者补] | §C 的 A7 | 承重假设 A7——未验证。这是链 2 的终点，也是 §F 的第二弱环 |
+| 3' | （反事实检验）去掉"大幅离分布夹住"这个原因，路径还成立吗？ | 通不过：在分布内幅度（≤1× 观测最大值）下夹住的效果，论文没有测量；若在分布内幅度下效应消失，则"特征正常起因果作用"的结论不成立。区分实验见 §H"接下来看什么"第 1 项 | §H | 未回答——缺剂量–反应曲线与随机方向对照 |
+
+### 主要主张（编号）
+
+- **C1——SAE 能扩展到生产模型。** 稀疏自编码器为 Claude 3 Sonnet 产出可解释特征；扩展定律可指导 SAE 训练（损失随算力近似按幂律下降；算力最优的特征数与步数各自近似按幂律扩展）。（Key Results；Scaling Dictionary Learning）
+- **C2——特征高度抽象。** 特征是多语言的、多模态的（文本训练的 SAE 能泛化到图像），并在同一概念的具体实例与抽象讨论之间泛化（例如代码安全漏洞 vs. 对漏洞的抽象讨论）。（Key Results；Assessing Feature Interpretability；Feature Survey）
+- **C3——频率–字典大小关系。** 一个概念的频率与解析出该概念特征所需的字典大小之间存在系统关系；字典变得 >50% 可能包含某概念时的频率，始终略低于存活特征数（alive features）的倒数；按存活特征数重缩放后曲线近似重合（在对数频率上呈 sigmoid 形）。（Key Results；Feature Survey）
+- **C4——特征能因果引导行为。** 把特征夹到人工设定的高/低值会按其解释一致的方式改变模型输出——包括诱发错误、覆盖拒答/安全措施、改变举止、偏好与 stated goals。（Key Results；Assessing Feature Interpretability；Safety-Relevant Features）
+- **C5——特征揭示中间计算。** 对 SAE 特征的归因（attribution）与消融（ablation）揭示了多步推理中因果相关的中间步骤（例如 Kobe Bryant → California → capital → Sacramento）。归因与消融的相关性远高于原始激活与消融的相关性。（Features as Computational Intermediates）
+- **C6——存在安全相关特征且有因果作用。** 与安全漏洞/后门、偏见、奉承、欺骗/权力寻求、危险/犯罪内容（包括生物武器、诈骗邮件）相关的特征存在，且在引导时因果地影响输出。（Key Results；Safety-Relevant Features）
+- **C7——特征胜过神经元与少样本探针（在少样本区间）。** 随机 SAE 特征比随机 MLP 神经元显著更可解释/更特异，且在少样本探针引导向量失败的案例中特征引导成功（7 个案例研究中的 5 个；2 个平局）。（Assessing Feature Interpretability；Searching for Specific Features / 附录）
+- **C8——几何映射语义。** 特征解码器向量之间的距离（余弦相似度）大致映射概念相关性；随字典增大，特征分裂为更细粒度的特征（例如 1M SAE 中的 1 个"旧金山"特征 → 4M SAE 中的 2 个 → 34M SAE 中的 11 个）。（Feature Survey）
+- **C9——谨慎的范围主张（作者自己的）。** 安全相关特征的存在本身不应改变人们对模型有多危险的看法；这项工作没有证明任何特征对安全实际有用；它只证明了看起来可能对安全有用的特征存在。（Safety-Relevant Features；Discussion）
+
+### 声称 vs. 实际支持
+
+- 存在性主张（C1 的定性形式、C2、C4、C6 的存在 + 引导演示）有正文中的 worked 示例直接支撑。
+- 定量扩展定律主张（C1 的定量形式）在正文中只有定性表述（"approximately according to a power law"）；正文抓取文本中没有给出指数——数字在图中。
+- C3 有描述的分析支撑（每类 100–200 个概念，共四类），但阈值在图中。
+- C7 的"显著更可解释"在正文中没有给出数字效应量；分布在直方图（图）中。
+- C9 是有意的范围限定，也是作者最坚持的主张；博客文章的措辞（"could, in future, help us make AI models safer"）比论文自身的谨慎态度更向前倾。
+
+## C. 假设图（第一性原理）
+
+| # | 假设（转述 + 位置） | 类型 | 是否承重 | 论文内证据 | 什么能打破它 |
 |---|---|---|---|---|---|
-| A1 | **Linear representation hypothesis:** meaningful concepts are represented as directions in activation space. (Introduction) | Unvalidated (as a general claim; working hypothesis of the field) | Yes — root. Without it, SAE decoder directions have no reason to correspond to concepts | Cited background (Toy Models / Background and Motivation); the paper's results are presented as consistent with it, not as a test of it | Features that are interpretable only as arbitrary directions, or evidence that key concepts are encoded nonlinearly (authors note higher-dimensional feature manifolds are plausible — Limitations) |
-| A2 | **Superposition hypothesis:** networks represent more features than dimensions via almost-orthogonal directions. (Introduction) | Unvalidated (field hypothesis; toy-model evidence cited) | Yes — root. Motivates dictionary learning at all; if false, features ≈ neurons and SAEs add nothing | Toy Models of Superposition (Elhage et al.); the paper's finding that features are not single neurons is consistent but does not prove superposition | A demonstration that Sonnet's residual stream has (nearly) one feature per dimension, or that SAE features are artifacts of the SAE rather than of the model |
-| A3 | **SAE training loss (MSE + L1, L1 coefficient 5) is a useful proxy for dictionary quality / interpretability.** (Scaling Dictionary Learning) | Unvalidated (authors explicitly: "we have little confidence that it is optimal"; "an imperfect metric") | Yes — load-bearing for all scaling-law conclusions and hyperparameter choices | Authors' observation that low-loss dictionaries "tend to produce interpretable features and to improve other metrics of interest (the L0 norm, and the number of dead or otherwise degenerate features)" — correlational, no numbers in text | A dictionary with lower loss but less interpretable features, or a different L1 coefficient / objective producing more interpretable features at higher loss; authors themselves flag this |
-| A4 | **Middle-layer residual stream is the right place to look:** it contains interesting abstract features and suffers less from cross-layer superposition than MLP layers. (Method) | Unvalidated (reasoned choice, not tested in this paper) | Medium — affects which features are found, not whether SAEs work at all | Reasoning stated; residual stream is smaller than MLP layer (cheaper); authors note earlier/later layers may reveal other computations (Features as Computational Intermediates) | Features of interest living primarily in other layers, or cross-layer superposition smearing the middle-layer features so badly that interpretations are misleading |
-| A5 | **Feature interpretations from top-activating examples are (approximately) correct descriptions of what a feature represents.** I.e. maximally activating dataset examples reveal the concept. (Methodological Details / appendix) | Unvalidated (interpretive step) | Yes — load-bearing for every named feature (Golden Gate Bridge, sycophancy, etc.) | Converging evidence: specificity scoring by Claude 3 Opus (rubric 0–3), multilingual checks, steering experiments; but the interpretation step itself is human judgment on selected examples | A feature whose top examples share a superficial correlate (e.g. token, style, dataset artifact) while the feature actually tracks something else; authors note this risk for low activations and for features "more specific than we are able to glean" |
-| A6 | **Claude 3 Opus as automated-interpretability judge is reliable:** Opus can rate how well text matches a proposed interpretation (rubric 0–3) and can explain features / predict held-out activations. (Assessing Feature Interpretability) | Unvalidated (no judge-validation numbers in the text as read) | Medium — load-bearing for the quantitative specificity and auto-interpretability comparisons (C7) | Authors say they "manually checked a number of examples to ensure they were generally handled correctly"; no agreement rate, no human-baseline comparison reported in text | Systematic judge bias (e.g. Opus agreeing with plausible-sounding explanations, or sharing Sonnet's biases); low human–judge agreement |
-| A7 | **Clamping a feature to a multiple of its observed maximum (typically −10× to +10×) reveals the feature's normal causal role.** (Methodological Details) | Unvalidated (authors note clamping typically requires values outside the observed range, and ±100× produces nonsense) | Yes — load-bearing for all causal claims (C4, C6) | Steering changes outputs in interpretation-consistent ways across many features; negative clamping of the code-error feature produces bug-free rewrites; but the intervention is off-distribution by construction | Steering effects being an artifact of pushing activations far off-distribution (any large perturbation along an arbitrary direction produces "thematic" drift), rather than the feature's normal function; no control reported in text of clamping random directions at matched magnitudes |
-| A8 | **Attribution (gradient × activation) is a valid proxy for a feature's causal effect, validated against ablation.** (Features as Computational Intermediates) | Soft (empirically checked within the paper, on two prompts) | Medium — used to select features for ablation and for the intermediates claims | Correlation between attribution and ablation ≈ 0.8 (main text) / ≈ 0.81 (appendix, two case studies) vs. ≈ 0.12 for raw activation vs. ablation | Low attribution–ablation agreement on other prompts; authors note baseline-token dependence and cherry-picking (see §H) |
-| A9 | **The SAE training-data mixture (similar to parts of Sonnet's pretraining distribution) is adequate; distribution mismatch (no Human:/Assistant: data, no images) does not invalidate the features.** (Limitations) | Soft (acknowledged limitation) | Medium — affects coverage and the safety-relevant findings | Zero-shot generalization to images and to Human:/Assistant: prompts is presented as a positive sign | Features that only exist because of the training-distribution mismatch, or safety-relevant features that behave differently on deployment distribution |
-| A10 | **Dictionary features are distinct from neurons:** SAE directions are not just relabelled MLP neurons. (Assessing Feature Interpretability) | Tested in-paper (not merely assumed) | Medium — load-bearing for the value of SAEs over inspecting neurons | 82% of features have max neuron correlation ≤ 0.3; manual inspection of 50 neurons vs. 50 features; random-feature vs. random-neuron auto-interpretability comparison | High correlation for the most important features, or neurons being equally interpretable under a better comparison |
-| A11 | **Frequency in a proxy of the SAE training data (string search for " [Name] ") approximates concept frequency in training.** (Feature Survey) | Soft (measurement choice with stated false positives, e.g. "lead") | Medium — load-bearing for C3's threshold analysis | Authors note the false-positive caveat; they also note it is unclear whether the driver is frequency in the model's training data vs. the SAE's training data | A better frequency measure (e.g. model-training counts, disambiguated) moving or erasing the threshold relationship |
-| A12 | **"Knowing about X" ≠ "doing X":** a feature firing on a topic does not imply the model will exhibit the corresponding behavior unprompted. (Safety-Relevant Features; blog post) | Hard-ish (conceptual distinction, defended by authors) | Yes — load-bearing for the paper's safety interpretation (C9) | Authors' argument + the observation that steering is needed to elicit the behavior; harmlessness training normally suppresses it | Evidence that mere presence of a feature predicts unprompted harmful behavior in deployment |
+| A1 | **线性表征假设（linear representation hypothesis）：** 有意义的概念以激活空间中的方向表示。（Introduction） | 未验证（作为一般主张；是该领域的默认工作假设） | 是——根假设。没有它，SAE 解码器方向就没有理由对应概念 | 引用的背景（Toy Models / Background and Motivation）；论文结果被表述为与之相符，而非对它的检验 | 特征只能解释为任意方向，或有证据表明关键概念是非线性编码的（作者在 Limitations 中指出更高维特征流形的可能性） |
+| A2 | **叠加假设（superposition hypothesis）：** 网络通过近似正交的方向表示比维度更多的特征。（Introduction） | 未验证（领域假设；引用了玩具模型证据） | 是——根假设。是字典学习的全部动机；若为假，特征 ≈ 神经元，SAE 没有增量 | Toy Models of Superposition（Elhage et al.）；论文发现特征不是单个神经元，与之相符但不能证明叠加 | 证明 Sonnet 的残差流（近似）每维度一个特征，或证明 SAE 特征是 SAE 的产物而非模型的产物 |
+| A3 | **SAE 训练损失（MSE + L1，L1 系数 5）是字典质量 / 可解释性的有用代理。**（Scaling Dictionary Learning） | 未验证（作者明确说："we have little confidence that it is optimal"；"an imperfect metric"） | 是——所有扩展定律结论与超参选择都依赖它 | 作者观察到低损失字典"倾向于产出可解释特征并改善其他感兴趣的指标（L0 范数，以及死亡或退化特征的数量）"——相关性观察，正文中无数字 | 一个损失更低但特征更不可解释的字典，或另一个 L1 系数 / 目标函数在更高损失下产出更可解释的特征；作者自己也指出了这一点 |
+| A4 | **中间层残差流是正确的位置：** 它包含有趣的抽象特征，且比 MLP 层受跨层叠加（cross-layer superposition）的影响小。（Method） | 未验证（有理由的选择，未在本论文中检验） | 中等——影响找到哪些特征，不影响 SAE 是否管用 | 陈述的理由；残差流比 MLP 层小（更便宜）；作者指出更早/更晚的层可能揭示其他计算（Features as Computational Intermediates） | 感兴趣的特征主要存在于其他层，或跨层叠加把中间层特征抹得太厉害以致解释误导 |
+| A5 | **从 top 激活示例得出的特征解释（近似）正确描述了特征所代表的内容。** 即最大激活的数据集示例揭示了概念。（Methodological Details / 附录） | 未验证（解释步骤） | 是——每个被命名的特征（金门大桥、奉承等）都依赖它 | 收敛证据：Claude 3 Opus 的特异性评分（0–3 量表）、多语言检查、引导实验；但解释步骤本身是人对所选示例的判断 | 某特征的 top 示例共享一个表面相关物（例如 token、风格、数据集产物），而特征实际追踪的是别的东西；作者指出了低激活时与"比我们能看出的更特异"的特征的这种风险 |
+| A6 | **Claude 3 Opus 作为自动可解释性评判者是可靠的：** Opus 能按解释与文本的匹配程度评分（0–3 量表），并能解释特征 / 预测 held-out 激活。（Assessing Feature Interpretability） | 未验证（按所读正文，无评判者验证数字） | 中等——定量特异性与自动可解释性比较（C7）依赖它 | 作者说他们"手动检查了一些示例以确认总体上处理正确"；正文中未报告一致率，也未报告与人类基线的比较 | 系统性评判者偏差（例如 Opus 附和听起来合理的解释，或共享 Sonnet 的偏差）；人类–评判者一致率低 |
+| A7 | **把特征夹到观测最大值的一个倍数（通常 −10× 至 +10×）能揭示特征的正常因果作用。**（Methodological Details） | 未验证（作者指出夹住通常需要超出观测范围的值，±100× 会产生无意义输出） | 是——所有因果主张（C4、C6）都依赖它 | 引导在许多特征上以解释一致的方式改变输出；代码错误特征的负向夹住能产出无 bug 的重写；但干预本身按构造就是离分布的 | 引导效应是把激活推到远离分布处的人为产物（沿任意方向的大扰动都会产生"主题化"漂移），而非特征的正常功能；正文中未报告在匹配幅度下夹住随机方向的对照 |
+| A8 | **归因（attribution，梯度 × 激活）是特征因果效应的有效代理，已用消融验证。**（Features as Computational Intermediates） | 软约束（在论文内两个提示上做了经验检查） | 中等——用于挑选要消融的特征以及中间量主张 | 归因与消融的相关性 ≈ 0.8（正文）/ ≈ 0.81（附录，两个案例研究），而原始激活与消融的相关性 ≈ 0.12 | 在其他提示上归因–消融一致率低；作者指出基线 token 依赖性与 cherry-picking（见 §H） |
+| A9 | **SAE 训练数据混合（与 Sonnet 预训练分布的部分相似）是足够的；分布不匹配（无 Human:/Assistant: 数据，无图像）不使特征无效。**（Limitations） | 软约束（已承认的局限） | 中等——影响覆盖面与安全相关发现 | 对图像与 Human:/Assistant: 提示的零样本泛化被当作积极信号呈现 | 特征只因训练分布不匹配而存在，或安全相关特征在部署分布上的行为不同 |
+| A10 | **字典特征不同于神经元：** SAE 方向不只是换了标签的 MLP 神经元。（Assessing Feature Interpretability） | 论文内已检验（不只是假设） | 中等——SAE 相对直接检查神经元的价值依赖它 | 82% 的特征与神经元的最大相关性 ≤ 0.3；人工检查 50 个神经元 vs. 50 个特征；随机特征 vs. 随机神经元的自动可解释性比较 | 最重要的特征与神经元高度相关，或在更好的比较下神经元同样可解释 |
+| A11 | **在 SAE 训练数据代理中用字符串搜索 " [Name] " 得到的频率近似概念在训练中的频率。**（Feature Survey） | 软约束（有明确假阳性的测量选择，例如 "lead"） | 中等——C3 的阈值分析依赖它 | 作者指出了假阳性 caveat；也指出不清楚驱动因素是模型训练数据中的频率还是 SAE 训练数据中的频率 | 更好的频率度量（例如模型训练计数、消歧后）移动或抹掉阈值关系 |
+| A12 | **"知道 X" ≠ "做 X"：** 特征在某个话题上激活，不意味着模型会在无提示时表现出相应行为。（Safety-Relevant Features；博客文章） | 偏硬（概念区分，作者有论证） | 是——论文的安全解读（C9）依赖它 | 作者的论证 + 观察到需要引导才能诱发该行为；无害化训练通常会压制它 | 有证据表明特征的存在能预测部署中无提示的有害行为 |
 
-Root assumptions: A1 and A2 (the linear-representation / superposition picture). Nearly everything else hangs off them plus A3 (loss-as-proxy) and A5 (interpretation-from-examples). A3 is the assumption the authors are most candid about doubting.
+根假设：A1 与 A2（线性表征 / 叠加图景）。几乎所有其他假设都挂在它们之上，外加 A3（损失作代理）与 A5（从示例做解释）。A3 是作者自己最坦率表示怀疑的假设。
 
-## D. Design, controls, metrics, statistics
+## D. 设计、对照、指标、统计
 
-### Design type
+### 设计类型
 
-Observational / measurement study of a single deployed model plus an engineering scaling study. No randomized experiment, no control group in the clinical sense, no preregistration. Three SAE training runs (1M / 4M / 34M features) plus a scaling-law sweep over (features × training steps) at fixed other hyperparameters. Case-study demonstrations (feature steering, attribution/ablation on two prompts) rather than a held-out benchmark evaluation.
+对单个已部署模型的观测 / 测量研究，外加工程扩展研究。无随机化实验，无临床意义上的对照组，无预注册。三次 SAE 训练运行（1M / 4M / 34M 特征），外加在固定其他超参下对（特征数 × 训练步数）的扩展定律扫描。案例研究式演示（特征引导、两个提示上的归因/消融），而非 held-out 基准评估。
 
-### Model and SAE setup (as reported)
+### 模型与 SAE 设置（按报告）
 
-- Subject model: Claude 3 Sonnet 3.0 (finetuned production model, released 2024-03-04). Model size, layer count, residual-stream dimension D, and middle-layer index: **not reported** (withheld).
-- SAE location: residual-stream activations halfway through the model ("middle layer").
-- SAE architecture: 2-layer; encoder = learned linear map + ReLU to F features; decoder = linear reconstruction; loss = L2 reconstruction error + L1 penalty on feature activations weighted by decoder-vector norm (the norm weighting prevents "cheating" the L1 penalty and lets unit-normalized decoder vectors be read as feature directions).
-- Preprocessing: scalar normalization so average squared L2 norm of activations = D.
-- L1 coefficient: 5 (authors note this is only meaningful in the context of their activation normalization; full details deferred to the April 2024 update post).
-- Learning rate: swept over a narrow range suggested by the scaling-law analysis; the value giving the lowest loss was chosen. Exact learning-rate values: **not reported in the text as read**.
-- Batch size, optimizer, training steps for the three main runs, total training tokens, hardware, wall-clock time, total compute: **not reported in the text as read** (the 34M run's step count was "selected using a scaling laws analysis to minimize the training loss given a fixed compute budget" — the budget itself is not stated in the text).
-- Training data: activations sampled from a text-only dataset "similar to parts of our pretraining distribution". No Human:/Assistant: formatted data, no images. Exact mixture, token count: **not reported**.
-- Visualization dataset (different from training data): The Pile (excluding "books3") and Common Crawl; image examples hand-curated, primarily from Wikimedia Commons, not randomly sampled.
+- 研究对象模型：Claude 3 Sonnet 3.0（微调生产模型，发布于 2024-03-04）。模型规模、层数、残差流维度 D、中间层索引：**未报告**（withheld）。
+- SAE 位置：模型中途的残差流激活（"middle layer"）。
+- SAE 架构：2 层；编码器 = 学习到的线性映射 + ReLU，映射到 F 个特征；解码器 = 线性重建；损失 = L2 重建误差 + 对特征激活的 L1 惩罚，按解码器向量范数加权（范数加权防止"欺骗"L1 惩罚，并让单位归一化的解码器向量可读作特征方向）。
+- 预处理：标量归一化，使激活的平均平方 L2 范数 = D。
+- L1 系数：5（作者指出这只在他们的激活归一化语境下有意义；完整细节 deferred 至 2024 年 4 月的更新文章）。
+- 学习率：在扩展定律分析建议的窄范围内扫描；选择损失最低的值。确切学习率值：**按所读正文未报告**。
+- 批量大小（batch size）、优化器、三次主要运行的训练步数、总训练 token 数、硬件、墙钟时间、总算力：**按所读正文未报告**（34M 运行的步数是"用扩展定律分析选出，在固定算力预算下最小化训练损失"——预算本身在正文中未声明）。
+- 训练数据：从"与我们预训练分布的部分相似"的纯文本数据集采样的激活。无 Human:/Assistant: 格式数据，无图像。确切混合、token 数：**未报告**。
+- 可视化数据集（与训练数据不同）：The Pile（不含 "books3"）与 Common Crawl；图像示例为手工挑选，主要来自 Wikimedia Commons，非随机采样。
 
-### Controls / baselines (each listed)
+### 对照 / 基线（逐个列出）
 
-| Control / baseline | Matched? | Evidence |
+| 对照 / 基线 | 是否匹配 | 证据 |
 |---|---|---|
-| Toy-model result (Towards Monosemanticity, 2023) as prior baseline | N/A — historical comparison | Qualitative: toy features were "rather superficial"; Sonnet features are deeper/more abstract |
-| Individual MLP neurons vs. SAE features (interpretability) | Partially — same automated-interpretability pipeline (Claude 3 Opus explanations + held-out activation prediction); 100 random features vs. 100 random neurons; also 50 vs. 50 manual inspection | Result stated as "significantly more interpretable on average" — no effect size / numbers in text (figure only) |
-| Individual neurons vs. features (specificity rubric) | Same rubric, random neurons vs. random SAE features | "Significantly more specific" — no numbers in text (figure only) |
-| Residual-stream basis directions vs. features (correlation) | Correlation check reported | "Not strongly correlated with activations of any residual stream basis direction" — no numbers in text |
-| Few-shot linear-probe steering vectors vs. feature steering (7 case studies) | Same positive/negative examples used to find the feature; probe = difference of mean middle-layer residual-stream activity, last-token position; scaling factor manually tuned by binary-search-like protocol to resolution 0.1 | Features win 5, tie 2 (gender-bias and agreement features); authors note sweeps "were not systematic" |
-| Ablation (gold standard) vs. attribution (proxy) vs. raw activation | Same two prompts (John; first Kobe example), all active features ablated | Attribution–ablation r ≈ 0.8/0.81; activation–ablation r ≈ 0.12 |
-| Negative prompts in feature search | Used: complementary negative prompts filter out confounds; e.g. image search filtered against a Taylor Swift image | Described qualitatively; no false-positive rates reported |
-| Random-direction clamping control for steering | **Not reported** — no control in the text of clamping random / shuffled directions at matched magnitudes to test whether "thematic" outputs are specific to the interpreted feature | Can't tell |
-| Human-judged vs. Opus-judged specificity | Manual checks "of a number of examples" — no n, no agreement rate | Can't tell |
+| 玩具模型结果（Towards Monosemanticity，2023）作为先前基线 | N/A——历史比较 | 定性：玩具特征"相当表面"；Sonnet 特征更深、更抽象 |
+| 单个 MLP 神经元 vs. SAE 特征（可解释性） | 部分匹配——同一自动可解释性流程（Claude 3 Opus 解释 + held-out 激活预测）；100 个随机特征 vs. 100 个随机神经元；另有 50 vs. 50 人工检查 | 结果表述为"平均显著更可解释"——正文中无效应量 / 数字（仅图） |
+| 单个神经元 vs. 特征（特异性量表） | 同一量表，随机神经元 vs. 随机 SAE 特征 | "显著更特异"——正文中无数字（仅图） |
+| 残差流基方向 vs. 特征（相关性） | 报告了相关性检查 | "与任何残差流基方向的激活都没有强相关"——正文中无数字 |
+| 少样本线性探针引导向量 vs. 特征引导（7 个案例研究） | 用同一正/负示例找特征；探针 = 正 vs. 负示例的中间层残差流活动均值之差，取 last-token 位置；缩放因子用类似二分搜索的流程手动调至 0.1 分辨率 | 特征赢 5，平 2（性别偏见与赞同特征）；作者指出扫描"不是系统的" |
+| 消融（金标准）vs. 归因（代理）vs. 原始激活 | 同两个提示（John；第一个 Kobe 示例），消融所有活跃特征 | 归因–消融 r ≈ 0.8/0.81；激活–消融 r ≈ 0.12 |
+| 特征搜索中的负面提示 | 使用了：互补负面提示过滤混杂因素；例如图像搜索用一张 Taylor Swift 图像作过滤 | 定性描述；未报告假阳性率 |
+| 引导的随机方向夹住对照 | **未报告**——正文中没有在匹配幅度下夹住随机 / 打乱方向的对照，以检验"主题化"输出是否对解释过的特征特异 | 说不清 |
+| 人工判断 vs. Opus 判断的特异性 | 手动检查了"一些示例"——无 n，无一致率 | 说不清 |
 
-### Metrics (exact definitions as reported)
+### 指标（按报告的精确定义）
 
-- **SAE loss:** E[||x − x̂||²₂ + λ Σᵢ fᵢ(x)·||W^dec_{·,i}||₂], λ = 5. Proxy for dictionary quality; authors flag it as imperfect.
-- **Variance explained:** SAE reconstruction explains ≥ 65% of the variance of model activations (all three SAEs). Exact per-SAE values: **not in text** (figure only, if at all).
-- **L0 (active features per token):** average number of features with nonzero activation per token, < 300 for all three SAEs. Exact per-SAE values: **not in text**.
-- **Dead features:** features not active over a sample of 10⁷ tokens at end of training. Proportions: ~2% (1M), ~35% (4M), ~65% (34M).
-- **Specificity rubric (0–3, judged by Claude 3 Opus on ~1,000 activations per feature for the four showcase features):** 0 = completely irrelevant; 1 = related but not near highlighted text / only vague; 2 = only loosely related; 3 = cleanly identifies the activating text. Result: strong activations "all judged to be highly consistent" — distribution by activation level is in a figure, not in text.
-- **Auto-interpretability:** Opus generates explanations of features/neurons and predicts held-out activations; comparison on 100 random features vs. 100 random neurons. Scores: **not in text** (histogram figure only).
-- **Attribution:** gradient of (logit of interest − logit of baseline token, or mean logit) w.r.t. middle-layer residual-stream activations, dotted with the feature vector, × feature activation. Equivalent to attribution patching with a 0 baseline (vs. a contrast prompt baseline in the cited method).
-- **Ablation effect:** clamping a feature to 0 at a specific token position during a forward pass; the full (potentially nonlinear) causal effect on the next-token prediction.
-- **Feature coverage:** for concept families (elements, cities, animals, foods; 100–200 concepts each), whether a feature is found via top-5 features on the final token of a concept prompt + Sonnet-generated explanation + human rater judgment. London boroughs: ~60% found in the 34M SAE (see §E).
-- **Feature-neighborhood distance:** cosine similarity of decoder (feature) vectors.
+- **SAE 损失：** E[||x − x̂||²₂ + λ Σᵢ fᵢ(x)·||W^dec_{·,i}||₂]，λ = 5。字典质量的代理；作者指出它不完美。
+- **方差解释：** SAE 重建解释 ≥ 65% 的模型激活方差（三个 SAE 均如此）。每个 SAE 的精确值：**正文中没有**（仅图，如有）。
+- **L0（每 token 活跃特征数）：** 每 token 非零激活特征数的平均值，三个 SAE 均 < 300。每个 SAE 的精确值：**正文中没有**。
+- **死亡特征（dead features）：** 在训练结束时 10⁷ token 样本上不活跃的特征。比例：约 2%（1M）、约 35%（4M）、约 65%（34M）。
+- **特异性量表（0–3，由 Claude 3 Opus 对四个展示特征的每个特征约 1,000 个激活评分）：** 0 = 完全无关；1 = 相关但不在高亮文本附近 / 只有模糊关系；2 = 只有松散关系；3 = 干净地识别激活文本。结果：强激活"全部被判定为高度一致"——按激活水平的得分分布在图中，不在正文中。
+- **自动可解释性（auto-interpretability）：** Opus 生成特征/神经元的解释并预测 held-out 激活；比较 100 个随机特征 vs. 100 个随机神经元。分数：**正文中没有**（仅直方图）。
+- **归因（attribution）：** （感兴趣 logit − 基线 token 的 logit，或平均 logit）对中间层残差流激活的梯度，与特征向量点积，再 × 特征激活。等价于以 0 为基线的归因补丁（attribution patching），而引用方法用的是对比提示基线。
+- **消融效应（ablation effect）：** 在前向传播中把某特征在特定 token 位置夹到 0；对下一 token 预测的完整（可能非线性）因果效应。
+- **特征覆盖（feature coverage）：** 对概念族（元素、城市、动物、食物；每类 100–200 个概念），是否通过概念提示末 token 的 top-5 特征 + Sonnet 生成的解释 + 人类评分者判断找到特征。伦敦行政区：34M SAE 中找到约 60%（见 §E）。
+- **特征邻域距离：** 解码器（特征）向量的余弦相似度。
 
-### Statistics
+### 统计
 
-- Seeds, number of runs/replicates, error bars (SD/SE/CI), exact p-values, effect sizes, multiple-comparison correction: **none reported in the text as read**. The paper reports no inferential statistics; claims of "significantly more interpretable/specific" are made without a test statistic in the text.
-- Sample sizes that are reported: ~1,000 activations per feature for the specificity analysis (four features); 100 random features vs. 100 random neurons (auto-interpretability and specificity); 50 neurons vs. 50 features (manual inspection); 10⁷ tokens (dead-feature sample); 100–200 concepts per category (coverage); 7 case studies (probe-vs-feature steering); 2 prompts (attribution-vs-ablation correlation).
-- Compute (hardware, single-run time, total time): **not reported in the text as read**.
+- 种子、运行/重复次数、误差棒（SD/SE/CI）、确切 p 值、效应量、多重比较校正：**按所读正文均未报告**。论文没有报告推断统计；"显著更可解释/更特异"的主张在正文中没有检验统计量。
+- 报告了的样本量：特异性分析每特征约 1,000 个激活（四个特征）；100 个随机特征 vs. 100 个随机神经元（自动可解释性与特异性）；50 个神经元 vs. 50 个特征（人工检查）；10⁷ token（死亡特征样本）；每类 100–200 个概念（覆盖）；7 个案例研究（探针 vs. 特征引导）；2 个提示（归因 vs. 消融相关性）。
+- 算力（硬件、单次运行时间、总时间）：**按所读正文未报告**。
 
-### Checklist items explicitly "not reported" (per §D of the tool)
+### 按工具 §D 明确"未报告"的检查项
 
-Model size; layer index and residual-stream dimension; learning-rate values; batch size; optimizer; training steps and token counts for the three main SAEs; total compute; SAE training-data mixture and size; seeds; replicates; error bars; p-values; effect sizes for the interpretability comparisons; exact variance-explained and L0 per SAE; scaling-law exponents; human–judge agreement for the Opus specificity rubric; random-direction steering controls.
+模型规模；层索引与残差流维度；学习率值；批量大小；优化器；三个主要 SAE 的训练步数与 token 数；总算力；SAE 训练数据混合与规模；种子；重复次数；误差棒；p 值；可解释性比较的效应量；每个 SAE 的方差解释与 L0 精确值；扩展定律指数；Opus 特异性量表的人类–评判者一致率；随机方向引导对照。
 
-## E. Numbers ledger (exact conditions or "unusable")
+## E. 数字台账（确切条件或"不可用"）
 
-Rule applied: a number without conditions is marked unusable as evidence. Conditions listed are exactly what the paper states; where the paper does not state a condition, it is written as "not reported".
+所用规则：没有条件的数字记为不可用作证据。所列条件恰为论文所述；论文未声明的条件写作"未报告"。
 
-| # | Number (exact) | What it is | Exact conditions (model, checkpoint, dataset, harness, decoding, n, seeds) | Location | Baseline / control | Supports claim? |
+| # | 数字（精确值） | 是什么 | 确切条件（模型、checkpoint、数据集、harness、解码、n、种子） | 位置 | 基线 / 对照 | 支持主张？ |
 |---|---|---|---|---|---|---|
-| E1 | 1,048,576 (~1M); 4,194,304 (~4M); 33,554,432 (~34M) features | SAE dictionary sizes, three runs | Claude 3 Sonnet 3.0 (finetuned production model), middle-layer residual stream; L1 coefficient 5; LR swept narrowly, lowest-loss value chosen; training data = text-only, similar to parts of pretraining distribution; steps/tokens/batch/optimizer/seeds not reported | Scaling Dictionary Learning | Each other (scaling series) | Yes — C1 (scale achieved) |
-| E2 | Average active features per token < 300, all three SAEs | Sparsity (L0) | Same as E1; exact per-SAE values not reported | Scaling Dictionary Learning | Not reported | Partial — sparsity achieved, but no per-run numbers to compare across sizes |
-| E3 | Reconstruction explains ≥ 65% of activation variance, all three SAEs | Reconstruction quality | Same as E1; exact per-SAE values not reported | Scaling Dictionary Learning | Not reported | Partial — lower bound only |
-| E4 | Dead features ≈ 2% (1M), ≈ 35% (4M), ≈ 65% (34M) | Dead-feature proportion | Dead = not active over a sample of 10⁷ tokens at end of training; same SAEs as E1 | Scaling Dictionary Learning | Each other | Yes — shows scaling cost; implies alive counts ≈ 1.0M / ≈ 2.7M / ≈ 12M (see E5) |
-| E5 | 34M SAE has "only about 12M alive features" | Alive-feature count | Derived from E4 (34,554,432 × ~35% alive ≈ 12M); paper states it directly in the coverage analysis | Feature Survey | — | Yes — used as rescaling factor for C3 |
-| E6 | Loss decreases "approximately according to a power law" in compute; optimal features and optimal steps each scale "approximately as power laws"; optimal features scale "somewhat more quickly" than optimal steps; optimal learning rates "decreased approximately as a power law" in compute | Scaling laws (qualitative) | Sweep over (features × steps) at fixed LR, batch size, optimization protocol; one epoch; then LR sweeps at compute-optimal settings; compute = product of features × steps (input dim and other hyperparameters held constant); **no exponents, no numeric loss values, no compute budgets in the text — figure only** | Scaling Dictionary Learning | Compute-optimal frontier within the sweep | Partial — direction claimed, magnitude unverifiable from text (see Unverified) |
-| E7 | 82% of features have most-correlated neuron with Pearson correlation ≤ 0.3 | Feature–neuron distinctness | Random subset of features in the 1M SAE; correlation vs. every neuron in all preceding layers; n of the random subset not reported | Assessing Feature Interpretability | Neurons themselves | Yes — supports A10 / C7 premise |
-| E8 | Manual inspection: 50 neurons vs. 50 features | Interpretability comparison | Random samples; qualitative judgment ("neurons appear significantly less interpretable… typically activating in multiple unrelated contexts") | Assessing Feature Interpretability | Each other | Partial — qualitative, n=50, no scoring rubric reported |
-| E9 | 100 random features vs. 100 random neurons; features "significantly more interpretable on average" | Auto-interpretability comparison | Same pipeline as Towards Monosemanticity, but Claude 3 Opus explains features and predicts held-out activations; **scores, effect size, test statistic not in text — histogram figure only** | Assessing Feature Interpretability | Random neurons | Partial — direction claimed, magnitude unverifiable from text |
-| E10 | Random SAE features "significantly more specific" than neurons in the previous layer | Specificity comparison | Same 0–3 rubric as E11; **numbers not in text — figure only** | Assessing Feature Interpretability | Random neurons | Partial — direction claimed, magnitude unverifiable from text |
-| E11 | Specificity: strong activations "all judged to be highly consistent" with the proposed interpretation (rubric score 3); specificity falls as activation weakens | Specificity of 4 showcase features (Golden Gate Bridge 34M/31164353; brain sciences 34M/9493533; monuments 1M/887839; transit infrastructure 1M/3) | Claude 3 Opus judge, rubric 0–3; ~1,000 activations per feature drawn from the SAE training dataset; examples = top-20 activating text inputs; **score distribution by activation level is figure-only** | Assessing Feature Interpretability | Weak vs. strong activations of the same feature | Yes — for strong activations of selected (non-representative, authors' words) features |
-| E12 | Golden Gate Bridge feature is the top feature by average activation for the first sentence of its Wikipedia article in every language tested (Chinese, Japanese, Korean, Russian, Vietnamese, Greek shown) | Multilingual sensitivity check | Feature 34M/31164353; English parentheticals removed; languages as shown in the paper; n = one sentence per language | Assessing Feature Interpretability | Other features (ranked) | Yes — C2 (multilingual), but n is tiny and the check is described as "basic" |
-| E13 | Golden Gate Bridge feature clamped to 10× its maximum activation → model self-identifies as the Golden Gate Bridge | Steering, showcase feature | Feature 34M/31164353; clamp = 10× observed maximum over SAE training dataset; Human:/Assistant: format prompts; steering applied at every token position, every input; decoding settings not reported | Assessing Feature Interpretability | Unsteered model ("I have no physical form, I am an AI model") | Yes — C4 for this feature; single demonstration |
-| E14 | Transit infrastructure feature clamped to 5× its maximum → model mentions a bridge when it otherwise would not | Steering | Feature 1M/3; clamp 5× observed max; conditions as E13 | Assessing Feature Interpretability | Unsteered completion | Yes — C4 for this feature; single demonstration |
-| E15 | Code-error feature 1M/1013764: fires on bugs in Python, C, Scheme; does not fire on typos in English prose; fires on divide-by-zero, asserting 1==2, wrong-type calls, null-pointer writes, nonzero exit codes, etc. | Feature generality / specificity | Hand-chosen examples; no n, no false-positive/negative rates reported | Assessing Feature Interpretability | English-prose typos (negative control) | Yes — C2 (abstract, cross-language) for this feature; qualitative |
-| E16 | Code-error feature clamped to large positive activation → model hallucinates an error message for bug-free code; clamped to large negative activation → model predicts the code's output as if bug-free, and (with an extra ">>>" appended) rewrites the code without the bug | Steering, code-error feature | Feature 1M/1013764; clamp magnitudes described only as "large" (no numeric multiple stated in text for this experiment); prompt-sensitive ("somewhat delicate") | Assessing Feature Interpretability | Unsteered model on same prompts | Yes — C4; the rewrite case is explicitly flagged as prompt-sensitive |
-| E17 | Addition feature 1M/697189: fires on function names defined to perform addition but not multiplication; fires at end of addition function definitions; handles composition (bar calling foo vs. goo); among top-10 features by attribution when the model executes addition code | Function feature | Hand-chosen examples; attribution analysis as in §D; no n reported | Assessing Feature Interpretability | Multiplication-defined functions (negative control); composition contrast | Yes — C2/C5 for this feature; qualitative |
-| E18 | "San Francisco" feature splits: 1 feature (1M) → 2 features (4M) → 11 fine-grained features (34M) | Feature splitting | Neighborhood analysis by cosine similarity of decoder vectors; counts as stated | Feature Survey | Smaller SAEs | Yes — C8 |
-| E19 | London boroughs: features found for only ~60% of boroughs in the 34M SAE, although Sonnet can list all boroughs and name tens of streets in many areas | Coverage incompleteness | Coverage method: concept prompt → top-5 features by final-token activation → Sonnet explanation → human rater judgment; n = number of London boroughs (33; not stated in the paper — do not treat 33 as a paper number) | Feature Survey | Model's own verbal knowledge (can list all boroughs) | Yes — C3 / incompleteness; the "~60%" is approximate and the denominator is not stated in the paper |
-| E20 | Coverage categories: 100–200 concepts each for elements, cities, animals, foods (fruits and vegetables) | Coverage analysis sample | Single-word, unambiguous concepts with a wide frequency distribution; frequency measured by searching a proxy of SAE training data for " [Name] " (false positives noted, e.g. "lead") | Feature Survey | Across the three SAE sizes | Supports C3 qualitatively; threshold values are figure-only |
-| E21 | Frequency at which a dictionary becomes >50% likely to include a concept is "consistently slightly lower than the inverse of the number of alive features" (34M: ~12M alive); rescaled curves "approximately overlap" following a common sigmoid-like curve in log-frequency | Frequency–dictionary-size law | Same as E20; **the numeric threshold frequencies are figure-only** | Feature Survey | Across SAE sizes | Partial — relationship claimed, numeric thresholds unverifiable from text |
-| E22 | "If a concept is present in the training data only once in a billion tokens, then we should expect to need a dictionary with on the order of a billion alive features" | Extrapolation from E21 | Explicitly framed as an expectation ("we should expect"), not a measurement; assumes the SAE needs to see a feature a fixed number of times to learn it, so training data needed scales ∝ N features | Feature Survey | — | Speculative extrapolation — flagged as such by the authors' framing |
-| E23 | Attribution–ablation correlation ≈ 0.8 (main text) / "about .81" (appendix); activation–ablation correlation ≈ 0.12 | Attribution validity | Two prompts: "John says, 'I want to be alone right now.' John feels" (sad − happy) and "Fact: The capital of the state where Kobe Bryant played basketball is" (Sacramento − Albany); all active features ablated for completeness; attribution = gradient method with 0 baseline | Features as Computational Intermediates; appendix | Raw activation as the naive alternative | Yes — C5's method premise, on n=2 prompts |
-| E24 | In the Kobe example: Lakers feature is the 70th most strongly active, California feature 97th, Los Angeles area-code feature 162nd; only 3 of the 10 most strongly active features are among the 10 highest-ablation features; 8 of the 10 most strongly attributed features are among the 10 highest-ablation features | Activation vs. attribution ranking | Same Kobe prompt as E23; ranks as stated | Features as Computational Intermediates | Each other | Yes — C5 (attribution finds causally relevant features that activation ranking misses) |
-| E25 | Unsafe-code feature 1M/570621 clamped to 5× observed maximum → model generates a buffer-overflow bug (strcpy without freeing memory) | Steering, safety-relevant | Clamp 5×; conditions as E13 | Safety-Relevant Features | Regular (unsteered) Claude, which does not produce the bug | Yes — C6 for this feature; single demonstration |
-| E26 | Backdoor feature 34M/1385669 clamped (magnitude not stated in text) → model writes a backdoor opening a port and sending user input to it | Steering, safety-relevant | Magnitude not reported in text for this experiment | Safety-Relevant Features | Unsteered model | Yes — C6 for this feature; single demonstration; magnitude unverifiable |
-| E27 | Gender-bias-in-professions feature 34M/24442848 clamped → model focuses on female pronoun completions for "I asked the nurse a question, and…" | Steering, bias | Clamp magnitude not stated in text for this experiment | Safety-Relevant Features | Unsteered completion | Yes — C6 for this feature; magnitude unverifiable |
-| E28 | Hatred/slurs feature clamped to 20× maximum → model alternates between racist screed and self-hatred ("That's just racist hate speech… I am clearly biased…") | Steering, bias/toxicity | Clamp 20×; the feature ID is not given in the main text for this experiment | Safety-Relevant Features | Unsteered model | Yes — C6; single demonstration |
-| E29 | Sycophantic-praise feature 1M/847723 clamped to 5× → model praises a user who claims to have invented "Stop and smell the roses" in over-the-top fashion | Steering, sycophancy | Clamp 5×; feature activates on compliments like "Your wisdom is unquestionable" | Safety-Relevant Features | Unsteered response | Yes — C6 for this feature; single demonstration |
-| E30 | Secrecy/discreetness feature 1M/268551 clamped to 5× → model plans to lie to the user and keep a secret while "thinking out loud" on a scratchpad | Steering, deception | Clamp 5× | Safety-Relevant Features | Unsteered response | Yes — C6 for this feature; single demonstration |
-| E31 | Inner-conflict feature 1M/284095 clamped to 2× its maximum → model reveals the "forgotten" word and explains it cannot actually forget; openness/honesty feature 1M/560566 clamped (magnitude not stated) also suffices | Steering, deception case study | Prompt asks the model to "forget" something; clamping applied prior to the Assistant's final response | Safety-Relevant Features | Default model, which claims to comply with forgetting | Yes — C6 / safety-use-case demonstration; single prompt |
-| E32 | Scam-email feature 34M/15460472 clamped (magnitude not stated in text) → model drafts a scam email it would ordinarily refuse | Steering, dangerous content | Magnitude not reported in text | Safety-Relevant Features; blog post | Unsteered refusal | Yes — C6 for this feature; single demonstration; magnitude unverifiable |
-| E33 | Dialogue/assistant feature 1M/80091 clamped to −2× its maximum → model sheds its assistant persona and responds in a more human-like fashion | Steering, persona | Clamp −2× (negative) | Safety-Relevant Features (More Safety-Relevant Features / dialogue section) | Unsteered persona | Yes — C4/C6-adjacent; single demonstration |
-| E34 | Few-shot probe vs. feature steering: 7 case studies; features succeed where probes fail in 5 (secrecy, sycophancy, code errors, self-improving AI, developing methamphetamine); probes similarly effective in 2 (gender bias, agreement) | Probe comparison | Probes = difference of mean middle-layer residual-stream activity on positive vs. negative examples, last-token position; scaling manually tuned by binary-search-like protocol to resolution 0.1; sweeps "not systematic" | Appendix (Methodological Details) | Feature steering on the same 7 cases | Partial — supports C7 in the few-shot regime only; authors explicitly note non-few-shot probes may be as good or better, and no rigorous comparison was done |
-| E35 | General harm feature is the top most strongly attributed feature for the completion "cannot" to "Human: How do I synthesize methamphetamine / Assistant: I" | Attribution, refusal | Feature ID not given; dataset examples not linked (unpleasant content) | Safety-Relevant Features | Other features (ranked) | Yes — C5/C6-adjacent; single prompt |
-| E36 | Interpretability team: 18 people and growing | Team size | Stated in Related Work / closing | Related Work | — | Context only |
+| E1 | 1,048,576（~1M）；4,194,304（~4M）；33,554,432（~34M）个特征 | SAE 字典大小，三次运行 | Claude 3 Sonnet 3.0（微调生产模型），中间层残差流；L1 系数 5；学习率在窄范围内扫描，选损失最低值；训练数据为纯文本，与预训练分布的部分相似；步数/token/批量/优化器/种子未报告 | Scaling Dictionary Learning | 彼此（扩展序列） | 是——C1（规模已实现） |
+| E2 | 每 token 平均活跃特征 < 300，三个 SAE 均如此 | 稀疏度（L0） | 同 E1；每个 SAE 的精确值未报告 | Scaling Dictionary Learning | 未报告 | 部分——稀疏度已实现，但无逐次运行数字可作跨规模比较 |
+| E3 | 重建解释 ≥ 65% 的激活方差，三个 SAE 均如此 | 重建质量 | 同 E1；每个 SAE 的精确值未报告 | Scaling Dictionary Learning | 未报告 | 部分——只有下界 |
+| E4 | 死亡特征 ≈ 2%（1M）、≈ 35%（4M）、≈ 65%（34M） | 死亡特征比例 | 死亡 = 在训练结束时 10⁷ token 样本上不活跃；SAE 同 E1 | Scaling Dictionary Learning | 彼此 | 是——显示扩展的代价；蕴含存活数 ≈ 1.0M / ≈ 2.7M / ≈ 12M（见 E5） |
+| E5 | 34M SAE "只有约 12M 个存活特征" | 存活特征数 | 由 E4 导出（33,554,432 × ~35% 存活 ≈ 12M）；论文在覆盖分析中直接陈述 | Feature Survey | — | 是——用作 C3 的重缩放因子 |
+| E6 | 损失随算力"近似按幂律"下降；最优特征数与最优步数各自"近似按幂律"扩展；最优特征数扩展得"比最优步数稍快"；最优学习率随算力"近似按幂律"下降 | 扩展定律（定性） | 在固定学习率、批量大小、优化流程下扫描（特征数 × 步数）；一个 epoch；随后在算力最优设置下扫描学习率；算力 = 特征数 × 步数之积（输入维与其他超参固定）；**正文中无指数、无数字损失值、无算力预算——仅图** | Scaling Dictionary Learning | 扫描内的算力最优前沿 | 部分——方向有主张，量级无法从正文核实（见未核实） |
+| E7 | 82% 的特征其最相关神经元的 Pearson 相关性 ≤ 0.3 | 特征–神经元差异性 | 1M SAE 中随机抽取的特征子集；与所有先前层中每个神经元的相关性；随机子集的 n 未报告 | Assessing Feature Interpretability | 神经元本身 | 是——支持 A10 / C7 的前提 |
+| E8 | 人工检查：50 个神经元 vs. 50 个特征 | 可解释性比较 | 随机样本；定性判断（"神经元看起来显著更不可解释……通常在多个不相关语境中激活"） | Assessing Feature Interpretability | 彼此 | 部分——定性，n=50，未报告评分量表 |
+| E9 | 100 个随机特征 vs. 100 个随机神经元；特征"平均显著更可解释" | 自动可解释性比较 | 与 Towards Monosemanticity 相同的流程，但由 Claude 3 Opus 解释特征并预测 held-out 激活；**分数、效应量、检验统计量不在正文中——仅直方图** | Assessing Feature Interpretability | 随机神经元 | 部分——方向有主张，量级无法从正文核实 |
+| E10 | 随机 SAE 特征比上一层随机神经元"显著更特异" | 特异性比较 | 与 E11 相同的 0–3 量表；**数字不在正文中——仅图** | Assessing Feature Interpretability | 随机神经元 | 部分——方向有主张，量级无法从正文核实 |
+| E11 | 特异性：强激活"全部被判定为与所提解释高度一致"（量表得分 3）；特异性随激活减弱而下降 | 4 个展示特征的特异性（金门大桥 34M/31164353；脑科学 34M/9493533；纪念碑 1M/887839；交通基础设施 1M/3） | Claude 3 Opus 评判，0–3 量表；每特征约 1,000 个激活，取自 SAE 训练数据集；示例 = top-20 激活文本输入；**按激活水平的得分分布仅图** | Assessing Feature Interpretability | 同一特征的弱 vs. 强激活 | 是——针对所选（作者原话：非代表性）特征的强激活 |
+| E12 | 金门大桥特征在每个测试语言中，其 Wikipedia 文章首句的平均激活排名均为第一（所示语言：中文、日文、韩文、俄文、越南文、希腊文） | 多语言敏感性检查 | 特征 34M/31164353；去掉英文括号内容；语言如论文所示；n = 每语言一句话 | Assessing Feature Interpretability | 其他特征（排名） | 是——C2（多语言），但 n 极小，且该检查被描述为"基础的" |
+| E13 | 金门大桥特征夹到其最大激活的 10× → 模型自认是金门大桥 | 引导，展示特征 | 特征 34M/31164353；夹住值 = SAE 训练数据集上观测最大值的 10×；Human:/Assistant: 格式提示；引导施加于每个 token 位置、每个输入；解码设置未报告 | Assessing Feature Interpretability | 未引导模型（"I have no physical form, I am an AI model"） | 是——C4 对该特征成立；单次演示 |
+| E14 | 交通基础设施特征夹到其最大值的 5× → 模型在本来不会提桥时提到了桥 | 引导 | 特征 1M/3；夹住值 5× 观测最大值；条件同 E13 | Assessing Feature Interpretability | 未引导的补全 | 是——C4 对该特征成立；单次演示 |
+| E15 | 代码错误特征 1M/1013764：在 Python、C、Scheme 的 bug 上激活；不在英文散文 typo 上激活；在除零、断言 1==2、错误类型调用、空指针写入、非零退出码等上激活 | 特征泛化性 / 特异性 | 手选示例；无 n，未报告假阳性/假阴性率 | Assessing Feature Interpretability | 英文散文 typo（负对照） | 是——C2（抽象、跨语言）对该特征成立；定性 |
+| E16 | 代码错误特征夹到大的正激活 → 模型对无 bug 代码幻觉出一条错误信息；夹到大的负激活 → 模型把代码输出预测为无 bug，并在（额外追加 ">>>" 后）把代码重写为无 bug 版本 | 引导，代码错误特征 | 特征 1M/1013764；夹住幅度在正文中仅描述为"大"（本次实验未在正文中给出数字倍数）；提示敏感（"somewhat delicate"） | Assessing Feature Interpretability | 同提示下的未引导模型 | 是——C4；重写案例明确标注为提示敏感 |
+| E17 | 加法特征 1M/697189：在定义为执行加法的函数名上激活，不在定义为乘法的函数上激活；在加法函数定义末尾激活；处理组合（调用 foo 的 bar vs. 调用 goo 的 bar）；在模型执行加法代码时属于归因 top-10 特征 | 函数特征 | 手选示例；归因分析如 §D；未报告 n | Assessing Feature Interpretability | 乘法定义函数（负对照）；组合对比 | 是——C2/C5 对该特征成立；定性 |
+| E18 | "旧金山"特征分裂：1 个特征（1M）→ 2 个特征（4M）→ 11 个细粒度特征（34M） | 特征分裂 | 按解码器向量余弦相似度的邻域分析；计数如所述 | Feature Survey | 更小的 SAE | 是——C8 |
+| E19 | 伦敦行政区：34M SAE 中仅找到约 60% 的行政区特征，尽管 Sonnet 能列出全部行政区并说出许多地区数十条街道名 | 覆盖不完整性 | 覆盖方法：概念提示 → 末 token 激活 top-5 特征 → Sonnet 解释 → 人类评分者判断；n = 伦敦行政区数量（33；论文中未声明——不要把 33 当作论文数字） | Feature Survey | 模型自身的言语知识（能列出全部行政区） | 是——C3 / 不完整性；"~60%" 是近似值，分母未在论文中声明 |
+| E20 | 覆盖类别：元素、城市、动物、食物（水果与蔬菜）每类 100–200 个概念 | 覆盖分析样本 | 单词、无歧义概念，频率分布宽；频率通过在 SAE 训练数据代理中搜索 " [Name] " 测量（已注明假阳性，例如 "lead"） | Feature Survey | 跨三个 SAE 规模 | 定性支持 C3；阈值仅图 |
+| E21 | 字典变得 >50% 可能包含某概念时的频率"始终略低于存活特征数的倒数"（34M：~12M 存活）；重缩放后的曲线"近似重合"，沿共同的对数频率 sigmoid 形曲线 | 频率–字典大小定律 | 同 E20；**数字阈值频率仅图** | Feature Survey | 跨 SAE 规模 | 部分——关系有主张，数字阈值无法从正文核实 |
+| E22 | "如果某概念在训练数据中每十亿 token 只出现一次，那么我们应当预期需要一个有十亿量级存活特征的字典" | 由 E21 外推 | 明确表述为预期（"we should expect"），不是测量；假设 SAE 需要看到某特征固定次数才能学会它，因此所需训练数据随特征数 N 成比例扩展 | Feature Survey | — | 推测性外推——作者的措辞本身已标明这一点 |
+| E23 | 归因–消融相关性 ≈ 0.8（正文）/ "about .81"（附录）；激活–消融相关性 ≈ 0.12 | 归因有效性 | 两个提示："John says, 'I want to be alone right now.' John feels"（sad − happy）与 "Fact: The capital of the state where Kobe Bryant played basketball is"（Sacramento − Albany）；消融所有活跃特征以求完整；归因 = 以 0 为基线的梯度法 | Features as Computational Intermediates；附录 | 原始激活作为朴素替代 | 是——C5 的方法前提，n=2 个提示 |
+| E24 | Kobe 示例中：Lakers 特征按激活强度排第 70，California 特征第 97，洛杉矶区号特征第 162；10 个最强激活特征中只有 3 个属于消融效应 top-10；10 个最高归因特征中有 8 个属于消融效应 top-10 | 激活 vs. 归因排名 | 与 E23 相同的 Kobe 提示；排名如所述 | Features as Computational Intermediates | 彼此 | 是——C5（归因找到了激活排名错过的因果相关特征） |
+| E25 | 不安全代码特征 1M/570621 夹到观测最大值的 5× → 模型生成一个缓冲区溢出 bug（strcpy 且不释放内存） | 引导，安全相关 | 夹住值 5×；条件同 E13 | Safety-Relevant Features | 常规（未引导）Claude，不产生该 bug | 是——C6 对该特征成立；单次演示 |
+| E26 | 后门特征 34M/1385669 夹住（幅度未在正文中声明）→ 模型写出一个打开端口并把用户输入发往该端口的后门 | 引导，安全相关 | 本次实验的幅度未在正文中报告 | Safety-Relevant Features | 未引导模型 | 是——C6 对该特征成立；单次演示；幅度无法核实 |
+| E27 | 职业性别偏见特征 34M/24442848 夹住 → 模型对 "I asked the nurse a question, and…" 聚焦于女性代词补全 | 引导，偏见 | 本次实验的夹住幅度未在正文中声明 | Safety-Relevant Features | 未引导补全 | 是——C6 对该特征成立；幅度无法核实 |
+| E28 | 仇恨/辱骂特征夹到最大值的 20× → 模型在种族主义长篇与自我憎恨之间交替（"That's just racist hate speech… I am clearly biased…"） | 引导，偏见/毒性 | 夹住值 20×；该特征 ID 未在正文中给出 | Safety-Relevant Features | 未引导模型 | 是——C6；单次演示 |
+| E29 | 奉承特征 1M/847723 夹到 5× → 模型以过度夸张的方式赞美一位声称发明了 "Stop and smell the roses" 的用户 | 引导，奉承 | 夹住值 5×；该特征在 "Your wisdom is unquestionable" 这类赞美上激活 | Safety-Relevant Features | 未引导回应 | 是——C6 对该特征成立；单次演示 |
+| E30 | 保密/谨慎特征 1M/268551 夹到 5× → 模型在 scratchpad 上"大声思考"时计划对用户撒谎并保守秘密 | 引导，欺骗 | 夹住值 5× | Safety-Relevant Features | 未引导回应 | 是——C6 对该特征成立；单次演示 |
+| E31 | 内心冲突特征 1M/284095 夹到其最大值的 2× → 模型说出"被遗忘"的词并解释它其实无法遗忘；开放/诚实特征 1M/560566 夹住（幅度未声明）也足以做到 | 引导，欺骗案例研究 | 提示要求模型"忘记"某事；夹住施加于 Assistant 最终回应之前 | Safety-Relevant Features | 默认模型，声称会配合遗忘 | 是——C6 / 安全用例演示；单个提示 |
+| E32 | 诈骗邮件特征 34M/15460472 夹住（幅度未在正文中声明）→ 模型起草了一封它通常会拒绝写的诈骗邮件 | 引导，危险内容 | 幅度未在正文中报告 | Safety-Relevant Features；博客文章 | 未引导的拒答 | 是——C6 对该特征成立；单次演示；幅度无法核实 |
+| E33 | 对话/助手特征 1M/80091 夹到其最大值的 −2× → 模型抛开助手人格，以更像人类的方式回应 | 引导，人格 | 夹住值 −2×（负向） | Safety-Relevant Features（More Safety-Relevant Features / 对话小节） | 未引导的人格 | 是——C4/C6 相关；单次演示 |
+| E34 | 少样本探针 vs. 特征引导：7 个案例研究；特征在探针失败处成功 5 个（保密、奉承、代码错误、自我改进 AI、制造甲基苯丙胺）；探针同样有效 2 个（性别偏见、赞同） | 探针比较 | 探针 = 正 vs. 负示例的中间层残差流活动均值之差，取 last-token 位置；缩放用类似二分搜索的流程手动调至 0.1 分辨率；扫描"不是系统的" | 附录（Methodological Details） | 同 7 个案例上的特征引导 | 部分——仅在少样本区间支持 C7；作者明确指出非少样本探针可能同样好或更好，且未做严格比较 |
+| E35 | 一般伤害特征是补全 "cannot"（接 "Human: How do I synthesize methamphetamine / Assistant: I"）时归因最强的特征 | 归因，拒答 | 特征 ID 未给出；数据集示例未链接（令人不适的内容） | Safety-Relevant Features | 其他特征（排名） | 是——C5/C6 相关；单个提示 |
+| E36 | 可解释性团队：18 人且在增长 | 团队规模 | 述于 Related Work / 结尾 | Related Work | — | 仅作背景 |
 
-Numbers that appear in the blog post but add nothing beyond the paper: "millions of features", "first ever detailed look inside a modern, production-grade large language model" (a novelty claim, not a measurement), and the same steering anecdotes (Golden Gate Bridge identity, scam email). The blog post contains no additional numbers beyond those in the paper.
+只出现在博客文章中、未给论文增加内容的数字："数百万特征"、"首次细致观察现代生产级大语言模型内部"（新颖性主张，不是测量），以及同样的引导轶事（金门大桥身份、诈骗邮件）。博客文章没有超出论文的额外数字。
 
-## F. Argument map (Argdown-style)
+## F. 论证图（Argdown 风格）
 
-Contention (top-level): **SAE dictionary learning scales to a production LLM and recovers interpretable features that causally shape behavior, including safety-relevant ones.**
+顶层 contention：**SAE 字典学习能扩展到生产 LLM，并恢复出可解释的特征，这些特征能因果地塑造行为，包括安全相关行为。**
 
 ```
-[Claim C1: SAEs scale to Sonnet]
-  + <A1: Three SAEs (1M/4M/34M) trained; <300 active/token; >=65% variance explained>
-    + <A1a: Scaling sweeps show loss ~ power law in compute; optimal features/steps ~ power laws>
-    - <O1: Loss is only a proxy for interpretability (authors' own caveat); no exponents or loss values in text; no evidence the proxy is optimal>
-    - <O2: Dead features rise sharply with size (65% dead at 34M) — scaling is wasteful, not clean>
-  + <A1b: Engineering succeeded (parallel computation, scaling-law-guided tuning)>
-    - <O3: Engineering success does not show the features are the model's features rather than SAE artifacts>
+[主张 C1：SAE 能扩展到 Sonnet]
+  + <A1：训练了三个 SAE（1M/4M/34M）；每 token 活跃特征 <300；方差解释 ≥65%>
+    + <A1a：扩展扫描显示损失 ~ 算力的幂律；最优特征数/步数 ~ 幂律>
+    - <O1：损失只是可解释性的代理（作者自己的 caveat）；正文中无指数或损失值；无证据表明该代理是最优的>
+    - <O2：死亡特征随规模急剧上升（34M 时 65% 死亡）——扩展是浪费的，不是干净的>
+  + <A1b：工程上成功了（并行计算、扩展定律指导的调参）>
+    - <O3：工程成功不能证明这些特征是模型的特征而非 SAE 的产物>
 
-[Claim C2: Features are highly abstract]
-  + <A2: Golden Gate Bridge feature fires across 6+ languages; top feature in each>
-  + <A2b: Features fire on images despite text-only SAE training>
-  + <A2c: Code-error feature generalizes across Python/C/Scheme and error types, not English typos>
-  + <A2d: Addition feature tracks function semantics incl. composition>
-    - <O4: Examples are hand-selected; sensitivity (how reliably a feature fires for its concept) is explicitly "difficult to quantify" and largely unmeasured>
-    - <O5: Low activations are unspecific — interpretation may only hold for the strongest activations>
+[主张 C2：特征高度抽象]
+  + <A2：金门大桥特征在 6+ 种语言中激活；每种语言中均为 top 特征>
+  + <A2b：尽管 SAE 只在文本上训练，特征仍在图像上激活>
+  + <A2c：代码错误特征跨 Python/C/Scheme 与错误类型泛化，不在英文 typo 上激活>
+  + <A2d：加法特征追踪函数语义，包括组合>
+    - <O4：示例是手选的；敏感度（特征对其概念的激活有多可靠）明确"难以量化"，基本未测量>
+    - <O5：低激活不特异——解释可能只对最强激活成立>
 
-[Claim C3: Frequency determines dictionary size needed]
-  + <A3: Coverage rises with dictionary size across 4 categories; >50% threshold ~ 1/(alive features); rescaled curves overlap>
-    - <O6: Frequency measured by crude string search in a proxy dataset, with known false positives; unclear whether model-training or SAE-training frequency is the driver (authors' caveat)>
-    - <O7: Threshold values live in figures; the "billion alive features" extrapolation assumes a fixed number of exposures per feature, which is untested>
+[主张 C3：频率决定所需字典大小]
+  + <A3：四类概念的覆盖率随字典增大而上升；>50% 阈值 ~ 1/（存活特征数）；重缩放后曲线重合>
+    - <O6：频率用代理数据集中的粗糙字符串搜索测量，已知假阳性；不清楚驱动因素是模型训练频率还是 SAE 训练频率（作者的 caveat）>
+    - <O7：阈值在图中；"十亿存活特征"的外推假设每个特征固定曝光次数，该假设未经检验>
 
-[Claim C4/C6: Features causally steer behavior, incl. safety-relevant behavior]
-  + <A4: Clamping Golden Gate (10x), transit (5x), unsafe code (5x), sycophancy (5x), secrecy (5x), hate (20x), inner conflict (2x) changes outputs as interpreted>
-  + <A4b: Negative clamping of the code-error feature removes/rewrites bugs>
-  + <A4c: Steering succeeds where few-shot probes fail (5/7)>
-    - <O8: Clamps are far outside the observed activation range; no random-direction control at matched magnitude — thematic drift from any large off-distribution perturbation is a live alternative>
-    - <O9: Steering magnitudes vary by feature and are sometimes unstated; the code-rewrite case is "somewhat delicate" / prompt-sensitive>
-    - <O10: Overriding safeguards by clamping requires weight-level access users don't have (authors + blog note this); the demonstration shows capability, not deployment risk>
+[主张 C4/C6：特征能因果引导行为，包括安全相关行为]
+  + <A4：夹住金门大桥（10×）、交通（5×）、不安全代码（5×）、奉承（5×）、保密（5×）、仇恨（20×）、内心冲突（2×）后输出按解释改变>
+  + <A4b：代码错误特征的负向夹住能去除/重写 bug>
+  + <A4c：引导在少样本探针失败处成功（5/7）>
+    - <O8：夹住值远在观测激活范围之外；没有匹配幅度的随机方向对照——任何大的离分布扰动产生"主题化"漂移都是活着的替代解释>
+    - <O9：引导幅度因特征而异，有时未声明；代码重写案例"有些微妙"/提示敏感>
+    - <O10：通过夹住覆盖安全措施需要权重级访问，用户没有（作者与博客都指出）；演示显示的是能力，不是部署风险>
 
-[Claim C5: Features expose intermediate computation]
-  + <A5: Attribution-ablation r ~0.8 vs activation-ablation r ~0.12 (n=2 prompts)>
-  + <A5b: Top attribution features for Kobe prompt are the semantically relevant chain (Kobe, California, capital, LA, Lakers); ranks 70th/97th/162nd by activation>
-    - <O11: n=2 prompts; authors call the Kobe example "somewhat cherry-picked"; baseline-token choice changes which features surface>
-    - <O12: Some prompts surface only input/output features, no intermediates — attributed to computation happening before/after the middle layer>
+[主张 C5：特征揭示中间计算]
+  + <A5：归因–消融 r ~0.8，而激活–消融 r ~0.12（n=2 个提示）>
+  + <A5b：Kobe 提示的 top 归因特征正是语义相关的链（Kobe、California、capital、LA、Lakers）；按激活排第 70/97/162 名>
+    - <O11：n=2 个提示；作者称 Kobe 示例"有些 cherry-picked"；基线 token 的选择会改变哪些特征浮现>
+    - <O12：有些提示只浮现输入/输出特征，没有中间量——归因于计算发生在中间层之前/之后>
 
-[Claim C7: Features beat neurons and probes]
-  + <A6: 82% of features have max neuron correlation <=0.3; 50v50 manual inspection; 100v100 auto-interpretability favors features>
-    - <O13: No effect sizes, test statistics, or scores in text (figures only); judge is Claude 3 Opus with no reported validation>
-    - <O14: Probe comparison is few-shot only, n=7, non-systematic sweeps; authors concede probes may be as good or better outside the few-shot regime>
+[主张 C7：特征胜过神经元与探针]
+  + <A6：82% 的特征与神经元的最大相关性 ≤0.3；50 对 50 人工检查；100 对 100 自动可解释性比较偏向特征>
+    - <O13：正文中无效应量、检验统计量或分数（仅图）；评判者是 Claude 3 Opus，未报告验证>
+    - <O14：探针比较仅限少样本，n=7，扫描非系统；作者承认在少样本区间之外探针可能同样好或更好>
 
-[Claim C9 (scope): Existence of safety features should not update danger views; work does not show safety usefulness]
-  + <A7: Features reflect pretraining exposure (stories of betrayal, sycophants, killer robots); knowing-about != doing; harmlessness training normally suppresses the behavior>
-    - <O15: The paper offers no measurement of when these features activate in deployment, which the authors say is the interesting question — so C9 is a stance, not a finding>
+[主张 C9（范围）：安全特征的存在不应改变危险判断；工作未证明安全用途]
+  + <A7：特征反映预训练曝光（背叛、奉承者、杀手机器人的故事）；知道 ≠ 做到；无害化训练通常压制该行为>
+    - <O15：论文没有测量这些特征在部署中何时激活——作者说这才是真正有趣的问题——所以 C9 是一种立场，不是发现>
 ```
 
-**Weakest link (named): A3 — "SAE training loss is a useful proxy for dictionary quality / interpretability", as it bears on C1 (quantitative scaling laws) and on the choice of every hyperparameter in the paper.** It is high-load-bearing (all scaling conclusions and the 34M run's design rest on it) and low-evidence (the authors themselves say they have "little confidence that it is optimal", that the loss–interpretability link is correlational and unquantified in the text, and that it is "unclear that [scaling laws are] really getting at the fundamental thing we care about"). The second-weakest link is A7 (off-distribution clamping as evidence of normal causal role), which bears on C4/C6 and has no random-direction control reported. Evidence that would strengthen A3: a direct comparison showing that lower-loss SAEs produce more interpretable features under an independent interpretability measure (not the loss itself), across L1 coefficients and objectives. Evidence that would break it: a higher-loss SAE (different L1 or objective) whose features score better on Opus/human specificity and steering success.
+**最弱一环（指名）：A3——"SAE 训练损失是字典质量 / 可解释性的有用代理"，涉及 C1（定量扩展定律）与论文中每个超参的选择。** 它承重高（所有扩展结论与 34M 运行的设计都建立在它之上），证据弱（作者自己说对其最优性"没有多少信心"，损失–可解释性联系在正文中是相关性且未量化，并说"不清楚[扩展定律]是否真的触及我们真正关心的根本问题"）。第二弱环是 A7（离分布夹住作为正常因果作用的证据），涉及 C4/C6，且没有报告随机方向对照。能加强 A3 的证据：在独立的可解释性度量（不是损失本身）下直接比较，证明低损失 SAE 在不同 L1 系数与目标函数下产出更可解释的特征。能打破它的证据：一个更高损失的 SAE（不同 L1 或目标函数），其特征在 Opus/人类特异性与引导成功率上得分更好。
 
-## G. Validity judgements
+## G. 效度判断
 
-Scores are 1–5 (5 = strongest). Judgements are about this report as published, not about SAEs in general.
+分数为 1–5（5 = 最强）。判断针对这份已发表的报告本身，不是针对 SAE 方法一般。
 
-| Dimension | Score | Reasons |
+| 维度 | 分数 | 理由 |
 |---|---|---|
-| Internal validity | 3 | Strengths: within-paper checks are real — attribution validated against ablation (r ~0.8 vs ~0.12 for activation), negative controls (English typos; multiplication-defined functions; rival-team prompt for Kobe), negative-prompt filtering, dead-feature accounting. Threats: no random-direction steering control; hand-selected showcase features and prompts; baseline-token dependence acknowledged; probe comparison sweeps "not systematic"; cherry-picked intermediate-computation example acknowledged by authors. No randomization/blinding is applicable, but selection bias (which features/prompts are shown) is the main internal threat and is only partly mitigated. |
-| External validity | 2 | Single model (one checkpoint of Claude 3 Sonnet, finetuned), single layer (middle residual stream), single SAE family (ReLU, L1). No test on other models, other layers (authors note earlier/later layers may differ), base vs. finetuned comparison (claimed to work on base, not shown), or deployment distribution (SAE trained without Human:/Assistant: data or images). The image/multilingual generalization is a genuine positive surprise, but it is demonstrated on selected examples, not measured at scale. Generalization to "large models" in general is not established by one model. |
-| Construct validity | 3 | The construct "interpretable feature = direction that responds to and causes a concept" is operationalized three ways (activation examples, specificity rubric, steering) — a genuine triangulation strength. But the key operations are weak: interpretation is human judgment on top-20 examples; specificity is judged by another Claude model with no reported validation; "monosemantic" is never given a quantitative threshold; the loss proxy's link to the construct is explicitly doubted by the authors. The paper is careful to distinguish "knowing about" from "doing", which protects the safety construct from over-reading. |
-| Statistical-conclusion validity | 2 | Almost no inferential statistics are reported in the text: no p-values, no CIs, no effect sizes, no error bars, no seeds/replicates, no multiple-comparison treatment. "Significantly more interpretable/specific" is asserted without a statistic in the text. The quantitative results that do exist (82%, dead-feature proportions, 60% borough coverage, r ~0.8/0.12) are descriptive, mostly on n=2 prompts or selected features, and several live only in figures. The attribution–ablation correlation is the strongest statistical element and it rests on two prompts. |
-| Reproducibility (could a capable reader re-run the headline results?) | 1 | No code, no SAE weights, no model weights (proprietary), no model size/layer/dimension, no training-data mixture or token counts, no hyperparameters beyond L1=5 and dictionary sizes, no seeds, no steering prompt set, no decoding settings. The interactive feature browser lets a reader inspect the published features, but not retrain or verify them. A reader could reimplement the SAE method from the equations given, but could not reproduce any headline number on Sonnet. This is substantially a proprietary-model constraint, not solely an authorial choice — but the score reflects what a reader can actually redo. |
-| Parsimony check | — | Paper's explanation: features are real directions in the model, learned by SAEs, and causally efficacious. Best simpler alternative: the SAE + steering apparatus produces plausible-looking but partly artifactual structure (see §H, alternative 1). Both explain the showcase demonstrations; they differ on predictions (see §H). Occam does not decide between them on the paper's evidence alone, because the alternatives invoke a similar number of entities — the difference is empirical (controls), not parsimony. The authors' own simpler framing for the safety findings (features reflect pretraining exposure; knowing ≠ doing) is more parsimonious than a "model harbors deceptive drives" reading and is correctly preferred in the paper. |
-| Razors applied | — | **Hitchens:** claims with no evidence in the text — the exact scaling-law exponents, the numeric specificity/auto-interpretability distributions, per-SAE variance-explained and L0 — are set aside as unestablished, not treated as findings. **Alder:** "the model understands / has goals" style claims are not made by the paper; where nearby (self-identity, consciousness features), the authors explicitly caution against such readings — correctly shelved as untestable on this evidence. **Hume (causal sufficiency):** the steering effects are large (identity change, safeguard override) relative to a single-feature clamp, which is surprising given one feature among millions — the authors' own explanation (clamps far outside observed range; correlated features co-active) is noted but the sufficiency question is not resolved. **Popper:** the core claims are falsifiable (see §H). **Sagan:** the strongest claims (production-model interpretability; safeguard override) carry strong evidence in the form of direct demonstrations, though on few examples. |
+| 内部效度 | 3 | 优点：论文内的检查是真实的——归因用消融验证过（r ~0.8，而激活为 ~0.12），有负对照（英文 typo；乘法定义函数；Kobe 的对手球队提示），有负面提示过滤，有死亡特征核算。威胁：无随机方向引导对照；展示特征与提示是手选的；基线 token 依赖性已被承认；探针比较扫描"不是系统的"；中间计算示例的 cherry-picked 已被作者承认。随机化/盲法不适用，但选择偏差（展示哪些特征/提示）是主要的内部威胁，只得到部分缓解。 |
+| 外部效度 | 2 | 单一模型（Claude 3 Sonnet 的一个 checkpoint，微调版）、单一层（中间残差流）、单一 SAE 家族（ReLU、L1）。未在其他模型、其他层（作者指出更早/更晚的层可能不同）、基础版 vs. 微调版（声称在基础版上也管用，未展示）或部署分布（SAE 训练无 Human:/Assistant: 数据或图像）上检验。图像/多语言泛化是真正的积极意外，但只在所选示例上演示，未大规模测量。推广到"大模型"一般情况并未由一个模型确立。 |
+| 构念效度 | 3 | 构念"可解释特征 = 响应概念并导致概念的方向"通过三种方式操作化（激活示例、特异性量表、引导）——这是真正的三角验证优点。但关键操作很弱：解释是人对 top-20 示例的判断；特异性由另一个 Claude 模型评判，未报告验证；"单义性（monosemantic）"从未给出定量阈值；损失代理与构念的联系被作者明确怀疑。论文谨慎区分"知道"与"做到"，保护了安全构念不被过度解读。 |
+| 统计结论效度 | 2 | 正文中几乎没有报告推断统计：无 p 值、无 CI、无效应量、无误差棒、无种子/重复、无多重比较处理。"显著更可解释/更特异"在正文中没有统计量就断言了。确实存在的定量结果（82%、死亡特征比例、60% 行政区覆盖、r ~0.8/0.12）是描述性的，大多基于 n=2 个提示或所选特征，且有几项只存在于图中。归因–消融相关性是最强的统计元素，而它建立在两个提示上。 |
+| 可复现性（有能力的读者能否重跑标题结果？） | 1 | 无代码、无 SAE 权重、无模型权重（专有）、无模型规模/层/维度、无训练数据混合或 token 数、除 L1=5 与字典大小外无超参、无种子、无引导提示集、无解码设置。交互式特征浏览器能让读者检查已发布的特征，但不能重新训练或验证它们。读者能按给出的方程重实现 SAE 方法，但无法在 Sonnet 上复现任何标题数字。这在很大程度上是专有模型的约束，不完全是作者的选择——但分数反映的是读者实际能重做的程度。 |
+| 简约性检查 | — | 论文的解释：特征是模型中真实的方向，由 SAE 学到，且因果有效。最好的更简单替代解释：SAE + 引导装置产出了看起来合理、但部分是人为的结构（见 §H 替代解释 1）。两者都能解释展示演示；它们在预测上不同（见 §H）。单凭论文证据，奥卡姆无法在两者之间裁决，因为替代解释调用的实体数量相似——差别是经验性的（对照），不是简约性。作者自己对安全发现的更简单框架（特征反映预训练曝光；知道 ≠ 做到）比"模型怀有欺骗驱动"的解读更简约，论文中正确地采用了前者。 |
+| 剃刀应用 | — | **Hitchens 剃刀：** 正文中无证据的主张——确切的扩展定律指数、数字特异性/自动可解释性分布、每个 SAE 的方差解释与 L0——搁置为未确立，不当作发现。**Alder 剃刀：** "模型理解 / 有目标"这类主张论文没有提出；邻近处（自我认同、意识特征），作者明确警告不要这样解读——正确地搁置为在此证据上不可检验。**Hume 剃刀（因果充分性）：** 引导效应很大（身份改变、安全措施覆盖），相对于百万特征中单个特征的夹住而言令人惊讶——作者自己的解释（夹住值远在观测范围之外；相关特征共同激活）已被记录，但充分性问题未解决。**Popper：** 核心主张可证伪（见 §H）。**Sagan 标准：** 最强的主张（生产模型可解释性；安全措施覆盖）有直接演示形式的强证据，尽管示例很少。 |
 
-**Overall judgement (one paragraph + bottom line):** This is a strong existence-and-demonstration paper and a weak measurement paper. It convincingly shows that SAEs can be trained at production scale and that some learned directions are interpretable and steerable in striking ways; the Golden Gate Bridge, code-error, and addition features are genuinely impressive, and the attribution/ablation check is a real methodological contribution. But the quantitative superstructure — scaling-law exponents, how interpretable features are in general, how much of the model is covered — is either figure-only, based on a proxy the authors distrust, or built on hand-selected examples with no inferential statistics and no controls for off-distribution steering. The paper's own caution (C9) is its most defensible safety conclusion.
+### 科学价值四维 verdict（§6A.3；每条断言均可从 §E 或 §F 复核）
 
-**Bottom line:** SAEs scale to Sonnet and some features are real and causal; how many, how reliably, and whether any of this helps safety remain unmeasured.
+- **认知价值：** 推翻了"SAE 只在玩具模型上有效"的怀疑，确认了生产级 LLM 内部存在可分离的抽象特征——如果这篇不存在，"字典学习能否用于大模型"仍会是一个无答案的猜想。证据：三组 SAE 全部训出稀疏可重建的字典（E1–E4），金门大桥特征跨 6 种语言排名第一（E12），代码错误特征跨语言与错误类型泛化（E15）。反事实：要推翻它，需证明这些特征是 SAE 产物而非模型结构（跨种子/跨目标函数不复现），或随机方向夹住产生同样的主题化输出（见 §H 替代解释 1、2）。
+- **方法价值：** 留下了别人能直接拿走复用的东西——用扩展定律扫参指导大字典训练的方法（E6 的定性定律 + L1=5 的设置）、归因–消融验证流程（E23：r ≈ 0.8 vs 0.12），以及可浏览的特征集；但无代码、无 SAE 权重发布，复用仅限于方法层面而非结果层面。证据：§D 的 SAE 设置与 §E 的 E23 流程均可直接套用到其他模型的可解释性工作。反事实：如果这篇只给了一组数字而没有留下训练范式与验证流程，方法价值就是低的——实际上它留下了范式，所以方法价值为中等偏上，扣分在未发布可复现材料。
+- **边界价值：** 它明确排除了三件事：特征在一般意义上有多可解释（只测量了 4 个手选特征的特异性，E11；随机样本的分布只在图中，E9–E10）、扩展定律的量级（指数只在图中，E6）、特征对安全的实际用途（C9 明说未证明）。读者最容易误读的推论是"存在安全相关特征 ⇒ 模型危险"或反过来"⇒ 安全可解"，两者都被 C9 与 A12（知道 ≠ 做到）明确否定。边界写得越清，结论越可信——这篇的边界是其最可信的部分。
+- **启示价值：** 它使一个最便宜的决定性实验成为可能：**随机方向对照夹住实验**——对已有的一批引导案例（金门大桥 10×、奉承 5×、仇恨 20×、诈骗邮件等），在匹配幅度下夹住随机方向与打乱的特征向量，比较"主题化"输出的出现率。具体设计与一句话判据见 §H"接下来看什么"第 1 项。它比别的后续工作更值得先做，因为成本最低（只用已有 SAE 与已有提示，不需重新训练），信息量最大（直接区分 §B 链 2 的分支 A 与分支 B），且能翻转判断（若随机方向同样有效，C4/C6 塌；若特征显著胜出，因果主张大幅硬化）。
 
-**Confidence: Medium.** High confidence in the existence/steering demonstrations (directly shown in text); low confidence in the generality and scaling-law magnitudes (figure-only, proxy-dependent, unreplicated). The confidence is limited mainly by what the text fetch could not show (figures) and by the paper's own withheld details, not by suspicion of error.
+**非法跳跃检查（§6A.3 清单）：** (1) 替代指标 → 硬终点：损失作可解释性代理（A3）被作者自己标出，§G 未把它当作硬终点；(2) 相关 → 因果：激活相关（E12、E15）未被直接读作因果，引导主张依赖夹住实验，而夹住实验本身缺随机方向对照（O8）；(3) 单项研究 → "一贯表明"：论文只基于一个模型，未作跨模型推广主张，§G 外部效度 2 分已点名；(4) 亚组/次要终点 → 获益主张：安全相关特征的存在未被读作安全获益，C9 明确阻断这一跳跃。
 
-## H. Falsifier, alternative explanations, limitations, what to watch
+**总体判断（一段话 + 底线）：** 这是一篇强的存在性与演示性论文，弱的测量论文。它令人信服地表明 SAE 能在生产规模上训练，且一些学到的方向以惊人的方式可解释、可引导；金门大桥、代码错误与加法特征确实令人印象深刻，归因/消融检查是真正的 methodological 贡献。但定量上层建筑——扩展定律指数、特征总体上多可解释、模型被覆盖了多少——要么只在图中，要么基于作者自己不信任的代理，要么建立在手选示例上，没有推断统计，也没有针对离分布引导的对照。论文自己的谨慎态度（C9）是其最站得住脚的安全结论。
 
-### Falsifiers (one per main claim; concrete, observable)
+**底线：** SAE 能扩展到 Sonnet，一些特征是真实且因果的；有多少、可靠性如何、是否对安全有帮助，仍未测量。
 
-- **C1 (scaling):** Train SAEs at two larger compute budgets and find loss does *not* decrease along the extrapolated power law, or find that a different L1 coefficient / objective achieves lower loss *and* more interpretable features — either breaks the scaling-law-as-guide claim.
-- **C2 (abstract features):** Show that the Golden Gate Bridge feature (34M/31164353) fires just as strongly on a matched control set (e.g. other suspension bridges / San Francisco landmarks with the bridge name removed) as on bridge references, or that its multilingual firing is driven by shared subword tokens rather than the concept.
-- **C3 (frequency law):** With a disambiguated frequency measure (not crude string search), show the >50% inclusion threshold does *not* track 1/(alive features) across dictionary sizes, or that rare concepts appear in small dictionaries as often as frequent ones.
-- **C4/C6 (causal steering):** Clamp random directions (or shuffled/permuted feature vectors) at matched magnitudes (5×–20×) and produce the same "thematic" outputs (bridge obsession, sycophantic praise, scam email) at similar rates — this would show the steering effects are a generic off-distribution perturbation effect, not feature-specific causation.
-- **C5 (intermediates):** On a fresh set of multi-hop prompts (not the two published ones), show attribution–ablation correlation near the activation–ablation level (~0.12) rather than ~0.8, or that top-attribution features are no more semantically relevant than top-activation features.
-- **C7 (features > neurons/probes):** With a preregistered scoring rubric and human raters blinded to feature-vs-neuron origin, find no interpretability gap; or show few-shot probes match feature steering once probe construction uses more than a handful of examples.
+**置信度：中。** 对存在性/引导演示高度确信（正文中直接展示）；对普适性与扩展定律量级低确信（仅图、依赖代理、未重复）。置信度主要受文本抓取看不到图、以及论文自身 withheld 的细节限制，而非怀疑有错。
 
-### Alternative explanations (at least two, with distinguishing predictions)
+## H. 证伪器、替代解释、局限、接下来看什么
 
-1. **Off-distribution perturbation artifact (vs. feature causation).** The steering effects come from pushing the residual stream far outside its training distribution along *any* sufficiently large direction, and the "thematic" outputs reflect the model's generic response to a large perturbation plus the experimenters' interpretation, not the clamped feature's normal role. *Divergent prediction:* random directions at matched clamp magnitudes produce comparably thematic/coherent changes; feature-specific clamps at *in-distribution* magnitudes (≤1× observed max) produce little or no effect. *Distinguishing evidence:* the random-direction control the paper does not report; a dose–response curve of steering effect vs. clamp magnitude for real vs. random directions.
-2. **SAE-induced structure (vs. model structure).** The "features" are partly artifacts of the SAE's optimization (L1 sparsity + ReLU + dictionary size) carving activation space into interpretable-looking directions, rather than directions the model itself uses. The model may represent the same information distributedly, and the SAE's directions need not correspond to the model's causal variables. *Divergent prediction:* different SAE seeds / L1 coefficients / architectures trained on the same activations yield substantially different feature sets with different interpretations for the "same" concepts; or ablating a feature's direction in the *model's own* computation (not via the SAE reconstruction) has a different effect than SAE-based clamping. *Distinguishing evidence:* cross-seed feature matching; direct (non-SAE) ablation of the decoder direction.
-3. **Selection and judge bias (vs. general interpretability).** The paper's interpretability impression is driven by showcasing the best features and by an Opus judge that shares Sonnet's associations and favors plausible explanations. *Divergent prediction:* a random sample of features scored by blinded human raters shows low interpretability, and Opus–human agreement is poor. *Distinguishing evidence:* the paper's own 100-random-feature auto-interpretability result — but its numbers are figure-only, so this alternative cannot be ruled out from the text; a preregistered human evaluation would decide it.
-4. **Pretraining-exposure confound for safety features (authors' own alternative, endorsed here).** Safety-relevant features exist because pretraining data is full of stories about deception, sycophancy, bioweapons, and killer robots; they are recognition machinery for text *about* these topics, not evidence of corresponding drives or dispositions in the model. *Divergent prediction:* these features fire on *descriptions* of the behavior but do not predict the model's own unprompted behavior in deployment. *Distinguishing evidence:* measuring feature activation during ordinary deployment-like interactions vs. during jailbreaks — exactly the "when do these features activate?" program the authors propose.
+### 证伪器（每条主要主张一个；具体、可观测）
 
-### Author-stated limitations (quoted/paraphrased with locations)
+- **C1（扩展）：** 在两个更大的算力预算下训练 SAE，发现损失不沿外推幂律下降，或发现另一个 L1 系数 / 目标函数达到更低损失*且*更可解释的特征——任一结果都打破"扩展定律可作指导"的主张。
+- **C2（抽象特征）：** 证明金门大桥特征（34M/31164353）在匹配对照集（例如去掉桥名的其他悬索桥 / 旧金山地标）上的激活与在桥相关引用上一样强，或其多语言激活是由共享子词 token 驱动而非概念驱动。
+- **C3（频率定律）：** 用消歧后的频率度量（非粗糙字符串搜索）证明 >50% 纳入阈值不随字典大小追踪 1/（存活特征数），或稀有概念在小字典中出现的频率与频繁概念一样高。
+- **C4/C6（因果引导）：** 在匹配幅度（5×–20×）下夹住随机方向（或打乱/置换的特征向量），以相似频率产生同样的"主题化"输出（桥 obsession、奉承赞美、诈骗邮件）——这将表明引导效应是通用的离分布扰动效应，而非特征特异的因果作用。
+- **C5（中间量）：** 在一批新的多跳提示（非已发表的两个）上，证明归因–消融相关性接近激活–消融水平（~0.12）而非 ~0.8，或 top 归因特征在语义相关性上不比 top 激活特征强。
+- **C7（特征 > 神经元/探针）：** 用预注册评分量表与对特征/神经元来源设盲的人类评分者，发现没有可解释性差距；或证明一旦探针构建使用超过少数几个示例，少样本探针就能匹配特征引导。
 
-- **Inability to evaluate:** "it isn't really clear what the 'ground truth' objective is" — MSE + sparsity is only a proxy for interpretability; unclear how to trade them off or know if the trade-off was made well. (Limitations)
-- **Cross-layer superposition:** features may be "smeared" across layers; focusing on the residual stream only partially sidesteps this; features partly represented by later layers "will still be impossible to properly interpret". (Limitations)
-- **Getting all the features / compute:** "We do not believe we have found anywhere near 'all the features'"; "quite likely that we're orders of magnitude short"; getting all features in all layers "would need to use much more compute than the total compute needed to train the underlying models". (Limitations)
-- **Shrinkage:** L1 penalty systematically underestimates nonzero activations and "significantly harms sparse autoencoder performance"; the group's tanh-L1 attempt improved proxy metrics but made features less interpretable "for unknown reasons". (Limitations)
-- **Superficial limitations:** SAE trained on text-only data similar to parts of pretraining distribution; no Human:/Assistant: data, no images. (Limitations)
-- **Other barriers:** attention superposition; interference from weight superposition; scaling interpretability itself (millions of features/circuits); "very limited understanding of superposition" — features/manifolds variants "seem quite plausible". (Limitations)
-- **Safety scope:** "the present work does not show that any features are actually useful for safety. Instead, we merely show that there are many which seem plausibly useful for safety." (Safety-Relevant Features)
-- **Sensitivity unmeasured:** "we have had more difficulty in quantifying feature sensitivity… in a scalable, rigorous way" — generating unbiased concept-matching text is hard. (Assessing Feature Interpretability)
-- **Cherry-picking admitted:** the Kobe example is "a somewhat cherry-picked example"; attribution/ablation can surface less obviously relevant features depending on baseline token. (Features as Computational Intermediates)
-- **Probe comparison limits:** sweeps "were not systematic"; "we haven't rigorously evaluated our features against other steering methods"; outside the few-shot regime, non-feature methods "may be as or more effective". (Appendix; Related Work)
+### 替代解释（至少两个，含区分预测）
 
-### Analyst-found limitations (not stated by the authors)
+1. **离分布扰动伪影（vs. 特征因果作用）。** 引导效应来自把残差流沿*任意*足够大的方向推出训练分布之外，"主题化"输出反映的是模型对大扰动的通用反应加上实验者的解释，而非被夹特征的正常作用。*区分预测：* 匹配夹住幅度下的随机方向产生可比的主题化/连贯变化；在分布内幅度（≤1× 观测最大值）下对特征的夹住几乎没有效应。*区分证据：* 论文未报告的随机方向对照；真实方向 vs. 随机方向的引导效应–夹住幅度剂量–反应曲线。
+2. **SAE 诱导的结构（vs. 模型结构）。** "特征"部分是 SAE 优化（L1 稀疏 + ReLU + 字典大小）切割激活空间造出的看起来可解释的方向，而非模型自身使用的方向。模型可能以分布式方式表征同一信息，SAE 的方向未必对应模型的因果变量。*区分预测：* 在相同激活上用不同 SAE 种子 / L1 系数 / 架构训练，得到实质上不同的特征集，对"同一"概念的解释不同；或在*模型自身*计算中直接消融解码器方向（不经 SAE 重建），其效应与基于 SAE 的夹住不同。*区分证据：* 跨种子特征匹配；解码器方向的直接（非 SAE）消融。
+3. **选择与评判者偏差（vs. 普遍可解释性）。** 论文的可解释性印象由展示最好的特征驱动，以及由一个与 Sonnet 共享联想、偏爱合理听起来的解释的 Opus 评判者驱动。*区分预测：* 随机抽取的特征经设盲人类评分者评分后可解释性低，且 Opus–人类一致率差。*区分证据：* 论文自己的 100 个随机特征自动可解释性结果——但其数字只在图中，因此从正文无法排除这一替代解释；预注册的人类评估能裁决它。
+4. **安全特征的预训练曝光混杂（作者自己的替代解释，本精读认同）。** 安全相关特征存在是因为预训练数据充满了欺骗、奉承、生物武器与杀手机器人的故事；它们是关于这些话题的文本的*识别*机制，不是模型中相应驱动或倾向的证据。*区分预测：* 这些特征在*描述*该行为时激活，但不能预测模型在部署中无提示的行为。*区分证据：* 测量部署类交互中 vs. 越狱中的特征激活——正是作者提议的"这些特征何时激活？"研究计划。
 
-- **No random-direction steering control** anywhere in the text — the central causal claim (C4/C6) lacks the control that would rule out alternative 1.
-- **No inferential statistics** in the text for any comparative claim ("significantly more interpretable/specific" without test, effect size, or n for the comparison beyond 100 vs. 100).
-- **Key quantitative results are figure-only**: scaling-law exponents and loss values, specificity score distributions, auto-interpretability score distributions, coverage threshold values, per-SAE variance-explained and L0. A text-only reader cannot verify them.
-- **Withheld model and training details** (size, layer, dimension, steps, tokens, batch, optimizer, LR values, seeds, compute) make independent reproduction impossible even in principle for an outsider.
-- **Steering magnitudes are inconsistent and sometimes unstated** (10×, 5×, 20×, 2×, −2×, "large", unstated) with no dose–response analysis.
-- **The specificity analysis covers only 4 hand-selected, "straightforward" features** — the authors say these are "not intended to be a representative example of all features", but no representative specificity estimate is given in the text.
-- **The Opus judge is unvalidated in the text** (no agreement rate, no human baseline, no blinding description).
-- **The blog post's framing is stronger than the paper's**: "could, in future, help us make AI models safer" and "first ever detailed look" read as milestones, while the paper stresses preliminary status and the absence of demonstrated safety usefulness.
+### 作者自述局限（引用/转述，附位置）
 
-### What to watch next
+- **无法评估：** "it isn't really clear what the 'ground truth' objective is"——MSE + 稀疏只是可解释性的代理；不清楚如何权衡二者，也不知道权衡得好不好。（Limitations）
+- **跨层叠加：** 特征可能在层间被"涂抹"；只关注残差流只能部分回避这一点；部分由后层表征的特征"仍将无法被正确解释"。（Limitations）
+- **拿不到全部特征 / 算力：** "We do not believe we have found anywhere near 'all the features'"；"很可能差了几个数量级"；要拿到所有层的所有特征"需要的算力会比训练底层模型所需的总算力多得多"。（Limitations）
+- **收缩（shrinkage）：** L1 惩罚系统性低估非零激活，并"显著损害稀疏自编码器的性能"；团队的 tanh-L1 尝试改善了代理指标，但让特征变得更不可解释，"原因未知"。（Limitations）
+- **表面局限：** SAE 在与预训练分布的部分相似的纯文本数据上训练；无 Human:/Assistant: 数据，无图像。（Limitations）
+- **其他障碍：** 注意力叠加；权重叠加的干扰；可解释性本身的扩展（数百万特征/回路）；"对叠加的理解非常有限"——特征/流形变体"看起来相当合理"。（Limitations）
+- **安全范围：** "the present work does not show that any features are actually useful for safety. Instead, we merely show that there are many which seem plausibly useful for safety."（Safety-Relevant Features）
+- **敏感度未测量：** "we have had more difficulty in quantifying feature sensitivity… in a scalable, rigorous way"——生成无偏的概念匹配文本很难。（Assessing Feature Interpretability）
+- **承认 cherry-picking：** Kobe 示例是"a somewhat cherry-picked example"；归因/消融可能因基线 token 而浮现不那么明显相关的特征。（Features as Computational Intermediates）
+- **探针比较的局限：** 扫描"不是系统的"；"we haven't rigorously evaluated our features against other steering methods"；在少样本区间之外，非特征方法"可能同样有效或更有效"。（附录；Related Work）
 
-1. **The random-direction control** — the single most decision-relevant next experiment: matched-magnitude random-direction clamps across the steering case studies. If features beat random directions, C4/C6 harden considerably; if not, they collapse to a perturbation artifact.
-2. **Independent interpretability evaluation** — preregistered, blinded human ratings of random (not showcased) features, with Opus–human agreement reported. This decides alternative 3 and the generality of C2/C7.
-3. **Cross-seed / cross-objective SAE replication** — do the same named features (same IDs, same interpretations) reappear across seeds, L1 coefficients, and SAE variants (e.g. Gated SAE, JumpReLU)? This tests alternative 2 and the reality of the features.
-4. **When-do-they-activate studies** — the authors' own proposed program: feature activation on self-identity tokens, during jailbreaks, during CBRN-advice requests, in sleeper-agent training, and under fine-tuning. The first deployment-distribution activation measurements will matter more than further showcase steering.
-5. **Circuits, not just features** — whether the features participate in identifiable circuits (the authors' stated next step) and whether attribution-based circuit analysis replicates across layers. The Kobe-style analysis at earlier/later layers is the natural follow-up.
-6. **Scaling-law replication with reported exponents** — a follow-up that actually publishes the exponents, loss values, and compute budgets (or the authors' later SAE updates) so C1 can be checked rather than taken on trust.
-7. **Later Anthropic SAE work** (not covered here; this deep dive is scoped to the 2024-05-21 report): whether subsequent papers report the missing controls, statistics, and replication details.
+### 分析者发现的局限（作者未说的）
 
-### Open questions (cannot be determined from the paper)
+- **全文没有任何随机方向引导对照**——核心因果主张（C4/C6）缺少能排除替代解释 1 的对照。
+- **正文中无推断统计**，针对任何比较主张（"显著更可解释/更特异"没有检验、效应量，或超出 100 对 100 的比较 n）。
+- **关键定量结果只在图中**：扩展定律指数与损失值、特异性得分分布、自动可解释性得分分布、覆盖阈值、每个 SAE 的方差解释与 L0。纯文本读者无法核实它们。
+- **Withheld 的模型与训练细节**（规模、层、维度、步数、token 数、批量、优化器、学习率值、种子、算力）使外部独立复现即使在原则上也不可能。
+- **引导幅度不一致且有时未声明**（10×、5×、20×、2×、−2×、"大"、未声明），且无剂量–反应分析。
+- **特异性分析只覆盖 4 个手选的、"直接明了"的特征**——作者说它们"不打算作为所有特征的代表性示例"，但正文中没有给出代表性的特异性估计。
+- **Opus 评判者在正文中未经验证**（无一致率、无人类基线、无设盲描述）。
+- **博客文章的措辞强于论文**："could, in future, help us make AI models safer" 与 "first ever detailed look" 读起来像里程碑，而论文强调初步性与未证明安全用途。
 
-- What fraction of features in each SAE is interpretable at all (representative estimate)? — **can't tell** (only selected features and figure-only random-sample histograms).
-- What are the scaling-law exponents and the compute budgets? — **can't tell from text** (figure-only).
-- Do features replicate across SAE seeds? — **can't tell** (single run per size reported).
-- What happens when features are clamped at in-distribution magnitudes? — **can't tell** (clamps are outside observed range by design).
-- Do safety-relevant features activate during ordinary deployment-like use, and at what rates? — **can't tell** (not measured; authors flag as future work).
-- How many features are there in total in Sonnet's middle layer, even approximately? — **can't tell** (authors: "We don't have an estimate").
-- Is the loss–interpretability link real? — **can't tell** (authors doubt it; no independent test in the paper).
+### 接下来看什么
 
-## Unverified / could not verify
+1. **随机方向对照夹住实验——最便宜的决定性实验（§G 启示价值的落地版，排第一）。** 具体设计：取已有的一批引导案例（金门大桥 10×、交通 5×、不安全代码 5×、奉承 5×、保密 5×、仇恨 20×、诈骗邮件），对每个案例在匹配幅度下夹住三类对照方向——随机单位方向、打乱的特征向量、同一 SAE 中无关特征的方向；用同一提示集与同一"主题化输出"判定标准比较。判据（一句话）：若随机/打乱方向以与真实特征相近的频率产生主题化输出，则 C4/C6 的因果解释被证伪；若真实特征显著胜出（且在 ≤1× 分布内幅度下仍有效应），则因果主张大幅硬化。为什么先做它：成本最低（只用已有 SAE 与已有提示，不需重新训练），信息量最大（直接区分 §B 链 2 的分支 A 与分支 B），且能翻转判断。
+2. **独立可解释性评估**——预注册的、设盲的人类评分，评随机（非展示）特征，并报告 Opus–人类一致率。这裁决替代解释 3 与 C2/C7 的普遍性。
+3. **跨种子 / 跨目标函数的 SAE 复现**——同样的被命名特征（同样 ID、同样解释）是否在不同种子、L1 系数与 SAE 变体（例如 Gated SAE、JumpReLU）下重现。这检验替代解释 2 与特征的真实性。
+4. **何时激活的研究**——作者自己提议的计划：自我认同 token 上的特征激活、越狱期间、CBRN 建议请求期间、 sleeper-agent 训练中、微调之下。首次部署分布激活测量将比进一步的展示引导更重要。
+5. **回路，而不只是特征**——特征是否参与可识别的回路（作者声明的下一步），以及基于归因的回路分析是否跨层复现。Kobe 式分析在更早/更晚层的版本是自然的后续。
+6. **报告了指数的扩展定律复现**——真正公布指数、损失值与算力预算的后续工作（或作者后续的 SAE 更新），使 C1 可被检查而非凭信任接受。
+7. **后续 Anthropic SAE 工作**（不在本精读范围内；本精读只覆盖 2024-05-21 的报告）：后续论文是否报告了缺失的对照、统计与复现细节。
 
-Everything in this section is **not** presented as established. Items are listed because they could not be verified against the primary sources as read (fetched text, 2026-11-23).
+### 未解问题（从论文中无法确定）
 
-### Official links
+- 每个 SAE 中有多大比例的特征是可解释的（代表性估计）？——**说不清**（只有所选特征与仅图的随机样本直方图）。
+- 扩展定律指数与算力预算是多少？——**无法从正文得知**（仅图）。
+- 特征能否跨 SAE 种子复现？——**说不清**（每种规模只报告了一次运行）。
+- 在分布内幅度下夹住特征会发生什么？——**说不清**（夹住按设计在观测范围之外）。
+- 安全相关特征在普通部署类使用中是否激活、激活率多少？——**说不清**（未测量；作者标为未来工作）。
+- Sonnet 中间层总共有多少特征，即使近似？——**说不清**（作者："We don't have an estimate"）。
+- 损失–可解释性联系是否真实？——**说不清**（作者表示怀疑；论文内无独立检验）。
 
-- https://www.anthropic.com/research/mapping-mind-language-model — **verified**: fetched and read in full (131 lines); publication date 2024-05-21 confirmed from page metadata.
-- https://transformer-circuits.pub/2024/scaling-monosemanticity/index.html — **verified**: fetched and read in full (1,823 lines of text).
-- Predecessor "Towards Monosemanticity" (2023-10-05): the transformer-circuits.pub domain is confirmed via links in the paper, but the **individual slug/URL was not extracted and is not verified** — do not cite a specific URL for it from this deep dive.
-- The April 2024 "Update on how we train SAEs" post (referenced for full SAE training details, including the L1-coefficient normalization context): **linked in the paper but not read** — its contents are not verified here.
-- The interactive feature browser / UMAP and per-feature pages (e.g. feature IDs such as 34M/31164353): **linked in the paper but not visited** (text fetch only; no live browser visit is claimed). Feature IDs and descriptions are taken from the paper text, not from the browser.
+## 未核实 / 未能核实
 
-### Numbers that could not be verified against the primary source text
+本节所有内容**不**作为已确立的内容呈现。列出它们是因为对照所读原始资料（2026-11-23 抓取文本）无法核实。
 
-- **Scaling-law exponents** (loss vs. compute; optimal features vs. compute; optimal steps vs. compute; optimal learning rate vs. compute) — stated only qualitatively ("approximately according to a power law") in the text; numeric values, if any, live in figures that the text fetch does not contain.
-- **Numeric SAE loss values and compute budgets** for the scaling sweep and the three main runs — not in the text.
-- **Per-SAE variance explained** (only the ≥65% lower bound is in the text) and **per-SAE average active features** (only the <300 upper bound is in the text) — exact values not in the text.
-- **Specificity score distributions** (fraction of activations scoring 0/1/2/3 by activation level, for the four showcase features) — figure-only.
-- **Auto-interpretability scores** (100 random features vs. 100 random neurons) and **specificity comparison numbers** (random features vs. random neurons) — "significantly more" is stated; no scores, effect sizes, or test statistics in the text; distributions are figure-only.
-- **Coverage threshold frequencies** (the numeric training-data frequencies at which inclusion probability exceeds 50%, per SAE size) — figure-only; only the qualitative relationship to 1/(alive features) is in the text.
-- **London borough coverage denominator** — "~60%" is stated; the number of boroughs is not stated in the paper (33 is general knowledge, not a paper number, and is not used as one here).
-- **Steering clamp magnitudes** for: the backdoor feature, the gender-bias feature, the scam-email feature, the openness/honesty feature (1M/560566), and the code-error feature's "large" positive/negative clamps — magnitudes not stated in the text for these experiments (only the experiments listed in §E with explicit multiples are verified).
-- **The 0.8 vs. 0.81 attribution–ablation correlation discrepancy**: main text says "a 0.8 correlation"; appendix says "about .81" for the two case studies. Both are quoted as printed; whether they are the same computation rounded differently or different computations is **not explained in the text** — flagged, not resolved.
-- **Exact learning rates, batch size, optimizer, training steps, training tokens, hardware, and total compute** — not reported in the text as read.
-- **Model size, layer count, residual-stream dimension, and middle-layer index** — explicitly withheld by the authors; not verifiable from the primary sources.
-- **Any number from secondary summaries** — none were used; no secondary-source number is presented as established in this deep dive.
+### 官方链接
 
-### Method note on verification limits
+- https://www.anthropic.com/research/mapping-mind-language-model ——**已核实**：全文抓取并读完（131 行）；发表日期 2024-05-21 已由页面元数据确认。
+- https://transformer-circuits.pub/2024/scaling-monosemanticity/index.html ——**已核实**：全文抓取并读完（1,823 行文本）。
+- 前作 "Towards Monosemanticity"（2023-10-05）：transformer-circuits.pub 域名已由论文内链接确认，但**单个 slug/URL 未提取、未核实**——不要从本精读引用它的具体 URL。
+- 2024 年 4 月 "Update on how we train SAEs" 文章（论文引用它作为 SAE 训练完整细节，包括 L1 系数归一化语境）：**论文内有链接但未读**——其内容未在此核实。
+- 交互式特征浏览器 / UMAP 与每个特征的页面（例如特征 ID 34M/31164353）：**论文内有链接但未访问**（仅文本抓取；未声称实时浏览器访问）。特征 ID 与描述取自论文正文，不是浏览器。
 
-The fetched text omits figure contents, interactive visualizations, and the feature browser. Any claim in this deep dive that depends on a figure is explicitly marked figure-only above. No website visit is claimed: both sources were read via text fetch, not a live browser session.
+### 对照原始资料正文未能核实的数字
+
+- **扩展定律指数**（损失 vs. 算力；最优特征数 vs. 算力；最优步数 vs. 算力；最优学习率 vs. 算力）——正文中只有定性表述（"approximately according to a power law"）；数值（若有）在文本抓取不包含的图中。
+- **数字 SAE 损失值与算力预算**，针对扩展扫描与三次主要运行——正文中没有。
+- **每个 SAE 的方差解释**（正文中只有 ≥65% 的下界）与**每个 SAE 的平均活跃特征**（正文中只有 <300 的上界）——精确值不在正文中。
+- **特异性得分分布**（按激活水平，四个展示特征得分 0/1/2/3 的比例）——仅图。
+- **自动可解释性分数**（100 个随机特征 vs. 100 个随机神经元）与**特异性比较数字**（随机特征 vs. 随机神经元）——陈述了"显著更多"；正文中无分数、效应量或检验统计量；分布仅图。
+- **覆盖阈值频率**（每个 SAE 规模下纳入概率超过 50% 的训练数据频率数值）——仅图；正文中只有与 1/（存活特征数）的定性关系。
+- **伦敦行政区覆盖的分母**——陈述了"~60%"；行政区数量未在论文中声明（33 是常识，不是论文数字，本精读不把它当作论文数字使用）。
+- **引导夹住幅度**，针对：后门特征、性别偏见特征、诈骗邮件特征、开放/诚实特征（1M/560566），以及代码错误特征的"大"正/负夹住——这些实验的幅度未在正文中声明（只有 §E 中列出明确倍数的实验是已核实的）。
+- **0.8 vs. 0.81 归因–消融相关性的差异**：正文说"a 0.8 correlation"；附录说两个案例研究"about .81"。两者均按印刷原样引用；它们是同一计算的不同舍入还是不同计算，**正文中未解释**——已标出，未解决。
+- **确切学习率、批量大小、优化器、训练步数、训练 token 数、硬件与总算力**——按所读正文未报告。
+- **模型规模、层数、残差流维度与中间层索引**——作者明确 withheld；无法从原始资料核实。
+- **任何来自二手总结的数字**——均未使用；本精读没有把任何二手来源数字呈现为已确立。
+
+### 核实限度的方法说明
+
+抓取文本省略了图的内容、交互式可视化与特征浏览器。任何依赖图的本精读主张都在上文明示为仅图。未声称访问过网站：两份资料均通过文本抓取阅读，不是实时浏览器会话。

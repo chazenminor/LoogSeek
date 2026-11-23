@@ -1,346 +1,393 @@
-# Claude 3.5 Sonnet
-> ID: MK-20261123-LR-005 · Version: v1.0 · Created: 2026-11-23 · Updated: 2026-11-23
-> Status: Draft (deep dive, primary source read 2026-11-23)
-> Official links: https://www.anthropic.com/news/claude-3-5-sonnet
-> Related: MK-20261123-EM-002 (close-reading tool)
+# Claude 3.5 Sonnet —— 介绍 Claude 3.5 Sonnet
+> ID: MK-20261123-LR-005 · 版本：v2.0 · 创建：2026-11-23 · 更新：2026-11-23
+> 状态：草稿（精读，原始资料读于 2026-11-23）
+> 官方链接：https://www.anthropic.com/news/claude-3-5-sonnet
+> 相关：MK-20261123-EM-002（精读工具）
+> 变更记录：2026-11-23：改写为中文，按精读工具 v2.0 补科学问题还原与为什么链、科学价值评估。
 
-> **Date conflict — flagged, not resolved.** The Anthropic news page itself carries metadata `Published: 2024-06-21T00:00:00.000Z` (fetched 2026-11-23). The same launch is commonly cited as **2024-06-20** (e.g. secondary chronologies list 2024-06-20; the announcement went live late on 2024-06-20 US time in many accounts). This file uses **2024-06-21** in its filename per the news-page metadata, but the true publication moment is ambiguous between 2024-06-20 and 2024-06-21 depending on timezone and on when the page was posted vs. timestamped. Do not treat either date as settled without a dated primary artefact (e.g. the original social post or a dated press timestamp).
+> **日期冲突——已标注，未解决。** Anthropic 新闻页面本身带有元数据 `Published: 2024-06-21T00:00:00.000Z`（取回于 2026-11-23）。同一发布常被引为 **2024-06-20**（例如次级年表列为 2024-06-20；按许多记载，公告于美国时间 2024-06-20 深夜上线）。本文件按新闻页面元数据在文件名中使用 **2024-06-21**，但真实发布时间在 2024-06-20 与 2024-06-21 之间并不确定，取决于时区以及页面是何时发布、何时打时间戳。没有注明日期的原始凭证（例如原始社交媒体帖子或注明日期的新闻时间戳），不应把任一日期视为定论。
 >
-> **What this document is.** A close reading (tool MK-20261123-EM-002, template A–H) of Anthropic's launch announcement for Claude 3.5 Sonnet **plus** its companion technical document, the *Claude 3.5 Sonnet Model Card Addendum* (June 2024), which is the document linked from Anthropic's system-cards page as "Claude Sonnet 3.5, June 2024" and which carries all the benchmark numbers. The announcement page as fetched contains **no benchmark table and no numeric results at all** — every number in §E comes from the addendum, not from the announcement prose. This is a **model launch / capability claim**, not a peer-reviewed paper, not a training report, and not a controlled experiment. It is evaluated here as a capability claim: what Anthropic asserts, what evidence it shows, and what it does not show.
+> **本文档是什么。** 按精读工具 MK-20261123-EM-002（A–H 模板）对 Anthropic 发布 Claude 3.5 Sonnet 的公告**加上**其配套技术文件《Claude 3.5 Sonnet Model Card Addendum》（2024 年 6 月，模型卡附录，model card addendum）所做的精读；该附录是 Anthropic 系统卡页面上链接为 "Claude Sonnet 3.5, June 2024" 的文件，承载了全部基准数字。按取回内容，公告页面本身**没有任何基准表，也没有任何数字结果**——§E 中的每一个数字都来自附录，而非公告正文。这是一次**模型发布 / 能力宣称**，不是同行评审论文，不是训练报告，也不是受控实验。本文按能力宣称来评估它：Anthropic 断言了什么、展示了什么证据、没有展示什么。
 >
-> **Sources actually read (2026-11-23, text fetch only — no live browser visit):**
-> 1. Announcement: https://www.anthropic.com/news/claude-3-5-sonnet — full text fetched; 81 lines. Note the page is **not** byte-identical to its June 2024 original: it carries an "Update Aug 28, 2025" consumer-terms notice at the top and metadata `Updated: 2026-11-13T22:37:05.593Z`.
-> 2. Addendum: https://assets.claude.com/fed9cc193a14b84131812372d8d5857f8f304c52.pdf — *Claude 3.5 Sonnet Model Card Addendum*, full text fetched (559 lines). Verified as the document linked from https://www.anthropic.com/system-cards under "Claude Sonnet 3.5, June 2024" (outlink 20 on that page resolves to this same PDF).
-> 3. System-cards index: https://www.anthropic.com/system-cards — confirms a "Claude Sonnet 3.5, June 2024" entry exists.
+> **实际读过的资料（2026-11-23，仅文本取回——未做实时浏览器访问）：**
+> 1. 公告：https://www.anthropic.com/news/claude-3-5-sonnet —— 全文已取回，共 81 行。注意该页面与 2024 年 6 月的原版**并非逐字节相同**：顶部带有一条 "Update Aug 28, 2025" 的消费者条款通知，元数据为 `Updated: 2026-11-13T22:37:05.593Z`。
+> 2. 附录：https://assets.claude.com/fed9cc193a14b84131812372d8d5857f8f304c52.pdf ——《Claude 3.5 Sonnet Model Card Addendum》，全文已取回（559 行）。已核实为 https://www.anthropic.com/system-cards 页面上 "Claude Sonnet 3.5, June 2024" 条目所链接的同一 PDF（该页面外链 20 解析到此 PDF）。
+> 3. 系统卡索引：https://www.anthropic.com/system-cards —— 确认存在 "Claude Sonnet 3.5, June 2024" 条目。
 >
-> **Reading passes:** 2 full passes over the announcement + addendum (Keshav pass 1 for five Cs; pass 2 over all tables, safety section, and references). No pass 3 (virtual re-implementation) was possible: there is no method, code, prompt, or harness to re-implement. Time: single session, 2026-11-23.
+> **阅读遍数：** 公告 + 附录共 2 遍（第 1 遍按 Keshav 法做五 C；第 2 遍通读全部表格、安全部分与参考文献）。未做第 3 遍（虚拟重实现）：没有任何方法、代码、提示词或评估框架可供重实现。用时：单次会话，2026-11-23。
 
 ---
 
-## A. Identification
+## A. 识别
 
-| Field | Value |
+| 字段 | 内容 |
 |---|---|
-| Title | Introducing Claude 3.5 Sonnet (announcement); *Claude 3.5 Sonnet Model Card Addendum* (technical companion) |
-| Author | Anthropic (corporate author; no individual authors named on either document) |
-| Venue / type | Company blog / model announcement + model-card addendum (lab report, not peer-reviewed, no arXiv version found) |
-| Date | **2024-06-21** per news-page metadata; **commonly cited as 2024-06-20** — see date-conflict flag above |
-| Model version | "Claude 3.5 Sonnet" — first release of the Claude 3.5 family. No checkpoint identifier, API model ID, parameter count, or version string is reported in either document. The October 2024 addendum later distinguishes this as the "original" snapshot vs. the "upgraded" (new) Claude 3.5 Sonnet; that distinction does not exist in the June sources. |
-| Companion documents | Claude 3 Model Card (March 2024, main card; §5.5 referenced for human-eval win-rate method — **not** read in this deep dive, see §H / Unverified); Responsible Scaling Policy (RSP); RSP Evaluations Report – Claude 3 Opus (May 2024, ref [23]) |
-| Analyst / date | Deep dive created 2026-11-23; primary sources read 2026-11-23 |
-| Report type (tool §A) | Existing-system analysis / capability announcement — **not** a measurement study with a stated research question, **not** a research prototype paper, **not** a dataset/benchmark paper |
-| Peer review | No. Vendor-published; safety portion reviewed pre-deployment by the UK AI Safety Institute (UK AISI) and explored by METR, but their results are **not** published in these sources |
+| 标题 | Introducing Claude 3.5 Sonnet（公告）；《Claude 3.5 Sonnet Model Card Addendum》（技术配套文件） |
+| 作者 | Anthropic（机构作者；两份文件均未列出个人作者） |
+| 载体 / 类型 | 公司博客 / 模型公告 + 模型卡附录（实验室报告，非同行评审，未找到 arXiv 版本） |
+| 日期 | 新闻页面元数据为 **2024-06-21**；**常被引为 2024-06-20**——见上文日期冲突标注 |
+| 模型版本 | "Claude 3.5 Sonnet"——Claude 3.5 家族的首个发布。两份文件均未报告检查点标识符、API 模型 ID、参数量或版本字符串。2024 年 10 月的附录后来把这一版区分为 "original"（原始）快照与 "upgraded"（升级版）Claude 3.5 Sonnet；这种区分在 6 月的资料中不存在。 |
+| 配套文件 | Claude 3 Model Card（2024 年 3 月，主卡；其 §5.5 被引用为人类评估胜率方法的出处——**本次精读未读，见 §H / 未核实**）；Responsible Scaling Policy（RSP，负责任扩展政策）；RSP Evaluations Report – Claude 3 Opus（2024 年 5 月，参考文献 [23]） |
+| 分析者 / 日期 | 精读创建于 2026-11-23；原始资料读于 2026-11-23 |
+| 报告类型（工具 §A） | 现有系统分析 / 能力公告——**不是**有明确研究问题的测量研究，**不是**研究原型论文，**不是**数据集 / 基准论文 |
+| 同行评审 | 无。厂商发布；安全部分在部署前由英国 AI 安全研究所（UK AI Safety Institute，UK AISI）评审，并由 METR 做了探索，但他们的结果**未发表**在这些资料中 |
 
-**One-sentence summary:** Anthropic launched a mid-tier model, Claude 3.5 Sonnet, claiming it beats its previous flagship (Claude 3 Opus) and leading competitors on most reported benchmarks while running at twice Opus's speed and at Sonnet-tier pricing — and it supports that claim with a vendor-run benchmark table, an internal agentic-coding evaluation, human-preference win rates, and an ASL-2 safety classification, while reporting no training details, no uncertainty, and no reproducibility artefacts.
+**一句话总结：** Anthropic 发布了中端模型 Claude 3.5 Sonnet，宣称它在多数已报告基准上击败了此前的旗舰模型 Claude 3 Opus 和主要竞品，同时以 Opus 两倍的速度和 Sonnet 级的定价运行——并以厂商运行的基准表、一次内部智能体编码评估（agentic coding evaluation）、人类偏好胜率和 ASL-2 安全分级来支撑这一宣称，同时未报告任何训练细节、不确定性或可复现材料。
 
 ---
 
-## B. Question & claims (five Cs)
+## B. 问题与主张（五 C）
 
-There is no stated research question. Reconstructed as a product claim, not a scientific question:
+没有陈述的研究问题。按产品宣称重构，而非按科学问题重构：
 
-- **Reconstructed question (analyst's words):** "Does the new mid-tier model Claude 3.5 Sonnet match or exceed the previous flagship Claude 3 Opus and current competitor models on standard capability benchmarks, at lower cost and higher speed, while remaining within acceptable safety bounds?"
-- **PICO-style adaptation:** System = Claude 3.5 Sonnet (June 2024 snapshot); Intervention = the new model itself (no intervention is manipulated — this is a comparison, not an experiment); Comparators = Claude 3 Opus / Sonnet / Haiku, GPT-4o, GPT-4 Turbo, Gemini 1.5 Pro, Llama 3 400B (instruct); Outcomes = benchmark scores, internal agentic-coding pass rate, human-preference win rates, refusal rates, long-context recall, ASL classification.
+- **重构的问题（分析者用语）：**“新的中端模型 Claude 3.5 Sonnet 是否在标准能力基准上达到或超过此前的旗舰模型 Claude 3 Opus 和当前竞品模型，同时成本更低、速度更快，并保持在可接受的安全范围内？”
+- **PICO 式改编：** 系统 = Claude 3.5 Sonnet（2024 年 6 月快照）；干预 = 新模型本身（没有操纵任何干预——这是一次比较，不是一次实验）；对照 = Claude 3 Opus / Sonnet / Haiku、GPT-4o、GPT-4 Turbo、Gemini 1.5 Pro、Llama 3 400B（instruct）；结果 = 基准分数、内部智能体编码（agentic coding）通过率、人类偏好胜率、拒绝率、长上下文回忆、ASL 分级。
 
-### Five Cs (pass 1)
+### 五 C（第 1 遍）
 
-- **Category:** Model announcement + model-card addendum (capability claim with evaluation tables).
-- **Context:** Follows the Claude 3 family (March 2024). The framing move is tier inversion: a *mid-tier* Sonnet now beats the previous *flagship* Opus. It also launches a product feature, Artifacts, in the same post.
-- **Correctness (do the assumptions look sound?):** Plausible direction, weak warrant — see §F/G. The headline claim ("outperforming competitor models and Claude 3 Opus on a wide range of evaluations") is literally true of *most* reported cells, but the table itself shows losses (MATH, MMMU vs. GPT-4o) and many empty competitor cells, so "wide range" does more work than the table does.
-- **Contributions (claimed vs. supported):** Claimed — a new frontier-at-mid-tier model, state-of-the-art vision, a new collaborative interface (Artifacts), ASL-2 safety. Supported by the documents — the benchmark table and agentic-coding result support "better than Opus on reported benchmarks"; Artifacts is a product launch, not an evaluated claim; ASL-2 is asserted with qualitative, not quantitative, safety evidence.
-- **Clarity:** 3/5. The announcement is crisp marketing prose; the addendum's tables are legible but its PDF text extraction scrambles column alignment (reconstructed in §E with care — see the note there), protocols differ across models within the same row, and key methods (human eval, safety thresholds, speed measurement) are deferred or omitted.
+- **类别（Category）：** 模型公告 + 模型卡附录（附评估表的能力宣称）。
+- **背景（Context）：** 紧随 Claude 3 家族（2024 年 3 月）。其框架动作是层级倒置（tier inversion）：一个*中端* Sonnet 如今击败了此前的*旗舰* Opus。同一篇公告还发布了一个产品功能 Artifacts。
+- **正确性（Correctness，假设看起来成立吗？）：** 方向可信，论证薄弱——见 §F/G。标题宣称（"outperforming competitor models and Claude 3 Opus on a wide range of evaluations"，在广泛评估上击败竞品模型和 Claude 3 Opus）按字面看对*多数*已报告单元格成立，但表本身显示了失利（MATH、MMMU 对 GPT-4o）和许多空白的竞品单元格，所以 "wide range"（广泛）一词承担的工作比表格本身更多。
+- **贡献（Contributions，宣称的 vs. 有支撑的）：** 宣称的——一个中端即前沿的新模型、最先进的视觉能力、一种新的协作界面（Artifacts）、ASL-2 安全。文件支撑的——基准表和智能体编码结果支撑了“在已报告基准上优于 Opus”；Artifacts 是一次产品发布，不是一项经过评估的宣称；ASL-2 是断言，所依据的安全证据是定性的，而非定量的。
+- **清晰度（Clarity）：** 3/5。公告是简洁的营销文字；附录的表格可读，但其 PDF 文本抽取打乱了列对齐（已在 §E 中谨慎重构——见该处说明），同一行内不同模型的评估协议并不相同，关键方法（人类评估、安全阈值、速度测量）被推迟到他处或略去。
 
-### Numbered claims
+### 编号主张
 
-| # | Claim (close paraphrase, with source location) |
+| # | 主张（接近原文的转述，附出处位置） |
 |---|---|
-| C1 | Claude 3.5 Sonnet "raises the industry bar for intelligence, outperforming competitor models and Claude 3 Opus on a wide range of evaluations, with the speed and cost of our mid-tier model, Claude 3 Sonnet." (Announcement L6–7) |
-| C2 | It "sets new industry benchmarks for graduate-level reasoning (GPQA), undergraduate-level knowledge (MMLU), and coding proficiency (HumanEval)." (Announcement L15–16; Addendum §2, Tables 1) |
-| C3 | "Claude 3.5 Sonnet operates at twice the speed of Claude 3 Opus." (Announcement L19–20) |
-| C4 | On the internal agentic coding evaluation it "solved 64% of problems, outperforming Claude 3 Opus which solved 38%." (Announcement L22–23; Addendum §2, Table 3) |
-| C5 | "Our strongest vision model yet, surpassing Claude 3 Opus on standard vision benchmarks" — incl. state-of-the-art MathVista, ChartQA, DocVQA, AI2D. (Announcement L30–32; Addendum §2, Table 2) |
-| C6 | Artifacts is a new way to use Claude — a dynamic workspace where generated content can be seen, edited, and built upon in real time. (Announcement L36–43) — a product claim, not an evaluated capability claim. |
-| C7 | Safety: "our red teaming assessments have concluded that Claude 3.5 Sonnet remains at ASL-2" (Announcement L47–48); "does not pose risk of catastrophic harm" (Addendum §3.1). Pre-deployment testing by UK AISI, results shared with US AISI. |
-| C8 | Pricing/access: $3 per million input tokens, $15 per million output tokens, 200K-token context window; available on Claude.ai, iOS app, API, Amazon Bedrock, Google Cloud Vertex AI. (Announcement L9–11) |
-| C9 | Forward-looking: Claude 3.5 Haiku and Claude 3.5 Opus "later this year"; aim to "substantially improve the tradeoff curve between intelligence, speed, and cost every few months." (Announcement L64–65) — a roadmap statement, not a finding. |
+| C1 | Claude 3.5 Sonnet "raises the industry bar for intelligence, outperforming competitor models and Claude 3 Opus on a wide range of evaluations, with the speed and cost of our mid-tier model, Claude 3 Sonnet."（“提升了智能的行业标杆，在广泛评估上击败竞品模型和 Claude 3 Opus，同时保持我们中端模型 Claude 3 Sonnet 的速度与成本。”）（公告 L6–7） |
+| C2 | 它 "sets new industry benchmarks for graduate-level reasoning (GPQA), undergraduate-level knowledge (MMLU), and coding proficiency (HumanEval)."（“在研究生级推理（GPQA）、本科级知识（MMLU）和编码能力（HumanEval）上树立了新的行业基准。”）（公告 L15–16；附录 §2，表 1） |
+| C3 | "Claude 3.5 Sonnet operates at twice the speed of Claude 3 Opus."（“Claude 3.5 Sonnet 的运行速度是 Claude 3 Opus 的两倍。”）（公告 L19–20） |
+| C4 | 在内部智能体编码评估中，它 "solved 64% of problems, outperforming Claude 3 Opus which solved 38%."（“解决了 64% 的问题，超过了解决 38% 问题的 Claude 3 Opus。”）（公告 L22–23；附录 §2，表 3） |
+| C5 | "Our strongest vision model yet, surpassing Claude 3 Opus on standard vision benchmarks"（“我们迄今最强的视觉模型，在标准视觉基准上超过 Claude 3 Opus”）——包括最先进的 MathVista、ChartQA、DocVQA、AI2D。（公告 L30–32；附录 §2，表 2） |
+| C6 | Artifacts 是一种使用 Claude 的新方式——一个动态工作区，生成的内容可以在其中实时查看、编辑和继续构建。（公告 L36–43）——产品宣称，不是经过评估的能力宣称。 |
+| C7 | 安全："our red teaming assessments have concluded that Claude 3.5 Sonnet remains at ASL-2"（“我们的红队评估得出结论，Claude 3.5 Sonnet 仍处于 ASL-2”）（公告 L47–48）；"does not pose risk of catastrophic harm"（“不构成灾难性伤害风险”）（附录 §3.1）。部署前由 UK AISI 测试，结果与美国 AISI（US AISI）共享。 |
+| C8 | 定价 / 获取：每百万输入 token 3 美元，每百万输出 token 15 美元，20 万 token 上下文窗口；可通过 Claude.ai、iOS 应用、API、Amazon Bedrock、Google Cloud Vertex AI 使用。（公告 L9–11） |
+| C9 | 前瞻：Claude 3.5 Haiku 与 Claude 3.5 Opus 将于 "later this year"（“今年晚些时候”）发布；目标是“每隔几个月大幅改善智能、速度与成本之间的权衡曲线”。（公告 L64–65）——路线图陈述，不是研究发现。 |
 
-**If C1–C2 were wrong, what would change:** the launch's central narrative — that the mid-tier had become the frontier — collapses, and with it the pricing/speed justification for deploying Sonnet over Opus or competitors. C4 is the load-bearing *practical* claim: if the agentic-coding gap is a scaffold artefact rather than a model difference, the "works with code, not just chats" story weakens even if benchmark cells hold.
+**如果 C1–C2 是错的，会改变什么：** 发布的核心叙事——中端已成为前沿——将崩塌，随之崩塌的还有用 Sonnet 而非 Opus 或竞品进行部署的速度 / 定价理由。C4 是承重的*实践*主张：如果智能体编码差距是脚手架（scaffold）造成的人工产物而非模型差异，即使基准单元格成立，“能处理代码而不只是聊天”的说法也会削弱。
+
+### 为什么链（工具 §6A.1，对最承重的主张 C1 与 C4）
+
+规则说明：每层标注 [FACT: 位置] 或 [GUESS]；标注作者说的还是分析者补的；链只能停在可检验的事实、承重假设或明确的“未回答”上，不许停在“因为模型更强了”这类套话上。
+
+**链 1——针对 C1：“3.5 Sonnet 在广泛评估上击败 Opus 与竞品”**
+
+| 层 | 为什么……？ | 因为…… | 证据 / 位置 | 状态 |
+|---|---|---|---|---|
+| 1 | 为什么 3.5 Sonnet 在已报告基准上得分高于 Opus 与多数竞品？ | 附录表 1–2 中，3.5 Sonnet 在表 1 的 11 行里有 7 行领先全部已报告单元格，在表 2 的 5 项视觉基准里领先 4 项；例如 GPQA 59.4% 对 GPT-4o 53.6%，HumanEval 92.0% 对 GPT-4o 90.2% [FACT: 附录表 1、表 2] | 附录表 1、表 2；§E | 已验证（数字本身）；但“为什么得分更高”未回答——数字是结果，不是机制 |
+| 2 | 为什么这些更高的分数会出现？是模型能力变强了，还是测量方式变了？ | **分叉。分支 A（作者隐含的解释）：** 新模型本身能力更强（推理、编码、视觉全面提升）。**分支 B（替代解释）：** 测量方式有利于新模型——同一行内不同模型的提示词 / 样本数（shots）/ 思维链（CoT）设置不同，竞品数字引自厂商自己的报告而非重测，部分单元格空白 [FACT: 附录表 1 行内协议差异；竞品数字引自参考文献 [8]、[9]、[16]、[17]] | 附录表 1（MATH、MGSM、DROP、GSM8K 行）；§C 的 A3、A4 | 未回答——两个分支对已报告数字的预测相同，现有数据无法区分；分支 A 依赖承重假设 A1、A3，分支 B 只需已观测到的协议不对称 |
+| 3 | 为什么分支 A（能力更强）会成立？能力变强的机制是什么——训练数据、算力、架构或方法上改了什么？ | **未回答。** 两份文件均未报告任何训练信息：无数据、无算力、无参数量、无架构、无方法。没有任何机制可以追问下去 [FACT: 两份文件均无训练章节；§D“统计”表] | 附录全文；§D | 明确的**未回答**——进 §H 未解问题。链在此终止：没有任何材料能回答“为什么能力变强”，因为作者没有给出原因 |
+| 3' | 反事实检验：去掉“能力变强”这个原因，链还成立吗？ | 成立。分支 B（协议不对称 + 二手竞品数字 + 空白单元格）单独就能解释已报告的表格，无需假设能力全面提升。按工具 §6A.1 规则 7，两个分支都通过反事实检验，必须同时保留，不能为了“一个根因”删掉分支 B | 分析者补；§F 最弱一环 A3 | 假设 A3（§C）——未验证。这是 C1 最承重的假设，也是最弱一环 |
+
+自下而上复核：链 1 倒着读是“训练上改了什么（未回答）→ 因此能力更强（未验证）→ 因此分数更高（已验证的数字）”——第二步推不过去，缺口就在机制层。**结论：C1 的“为什么”在机制层断裂；文件证明了分数更高，没有证明为什么更高。**
+
+**链 2——针对 C4：“智能体编码评估 64% 对 38%”**
+
+| 层 | 为什么……？ | 因为…… | 证据 / 位置 | 状态 |
+|---|---|---|---|---|
+| 1 | 为什么 3.5 Sonnet 在内部智能体编码评估中解决了 64% 的问题，而 Opus 只解决 38%？ | 数字本身已验证：附录表 3 报告 64% 对 38%（Sonnet 21%、Haiku 17%）[FACT: 附录 §2、表 3] | 附录 §2、表 3；§E 的 E3.1 | 已验证（数字本身）；“为什么差距这么大”未回答 |
+| 2 | 为什么差距达到 26 个百分点？是模型更会写代码，还是脚手架 / 工具 / 迭代预算不同？ | **分叉。分支 A（作者隐含的解释）：** 新模型本身的软件工程能力更强。**分支 B（替代解释）：** 新模型得到了更好（或更新）的智能体脚手架、工具集、迭代预算或提示词，而 Opus 用的是较旧 / 较弱的配置 [GUESS：分析者补——脚手架、工具、迭代预算、提示词均未报告，无法验证] | 附录 §2“Agentic Coding”散文描述；§C 的 A5、A6 | 未回答——n、问题选择、步骤 / 时间预算、脚手架、提示词均未报告，两个分支预测的数字相同，现有数据区分不了 |
+| 3 | 为什么分支 A 会成立？新模型在真实软件工程任务上强在哪一步——是多文件编辑、调试、还是测试驱动的自我修正？ | **未回答。** 评估设计只以散文描述（真实 PR、多文件编辑、隐藏测试、沙箱、智能体循环），没有任何分解数据：没有按任务类型、难度或失败模式拆分的通过率 [FACT: 附录 §2；§D] | 附录 §2；§D | 明确的**未回答**——进 §H。链在此终止 |
+| 3' | 反事实检验：去掉“模型更强”，换脚手架，差距还在吗？ | 不知道。没有任何材料能回答——这是 §H 替代解释 3 的判别实验（互换脚手架）要做的事 | 分析者补；§H 替代解释 3 | 假设 A5、A6（§C）——未验证。64% 对 38% 是全文件最大的单个差距，也是透明度最低的测量 |
+
+自下而上复核：链 2 倒着读是“模型在某一步更强（未回答）→ 因此在内部评估中通过率更高（已验证的数字）”——第一步没有证据。**结论：C4 的“为什么”同样在机制层断裂；26 个百分点的差距是真实报告的数字，但其原因完全未知。**
+
+### 科学问题还原：五问（工具 §6A.2，用自己的话回答）
+
+**先说最重要的发现：这是一篇模型公告，不是论文——五问里有几问没有真实答案，这本身就是发现。** 下面逐问回答，答不出的明说答不出，不编造。
+
+1. **现象 / 反常是什么？** 没有科学反常。没有任何观察、失败或出乎意料的现象逼出这份文件。触发它的是一次产品发布：Anthropic 有了一个新模型要推向市场，需要向用户和开发者说明它比旧模型好在哪里、多少钱、多快。所谓“反常”只是商业层面的：中端 Sonnet 的基准分数超过了此前的旗舰 Opus——但这不是一个待解释的科学现象，而是一句营销叙事（层级倒置）。**答不出反常，说明这份工作的“问题意识”不在科学层面，而在产品层面。**
+2. **为什么重要，不解决会怎样？** 对领域（认知）而言：基本不重要——不解决它，没有任何信念会一直错下去，没有任何风险会一直存在；文件中没有任何关于智能本质、训练机制或评估科学的新认知。对实践而言：重要是真实的，但它是商业与部署层面的重要——用户要决定用 Sonnet 还是 Opus、还是竞品模型，要按速度与成本做部署选择；如果这份公告的数字不可信，用户会为错误的模型选择付出真金白银（更高的推理成本、更差的任务表现）。利害是具体的：误导性的基准比较会让部署决策系统性地偏向 Anthropic 的产品。
+3. **为什么之前做不了 / 没做？** 没有 blocker。没有任何数据、算力、方法或概念上的障碍卡住这件事——跑一组公开基准、做一张对照表，是任何实验室在任何时间都能做的事。这份文件不是移走了哪块石头才得以完成；它只是“新模型发布时例行要做的一次评估汇总”。把“第一个发布 3.5 Sonnet”误当成“做对了什么”，正是这一问要防止的错误。真正卡住的东西恰恰相反：**可信的跨厂商比较**之前也没做到，这份文件之后也仍然没做到（协议不对称、二手数字、无不确定性——见 A3、A4、§D）。
+4. **为什么这个方法 / 设计能回答这个问题？** 方法与问题不匹配——这里要明说。问题（按重构）是“新模型是否在能力、成本、速度上全面优于旧旗舰与竞品，同时安全”，而方法是“厂商自己跑自家模型的公开基准 + 引用竞品厂商自己的数字 + 一次不公开的内部评估 + 一次方法被推迟到另一份文件的人类评估”。这个方法恰好回答的是一个**更容易的问题**（“在我们选的基准、我们选的协议下，我们的模型得分更高吗？”），而不是原来的问题（“它真的更强、更安全吗？”）。它绕过的不是 blocker，而是**独立性**：没有独立重测、没有统一评估框架、没有不确定性量化。方法与问题的错位本身就是 §G 效度评分低的原因。
+5. **答案改变了什么认知或实践？** 认知上：**什么都没改变。** 读完之后，关于智能、训练或评估科学，没有任何信念应该修改——文件没有提出机制、没有检验假设、没有推翻任何旧信念；它甚至没有声称自己发现了任何机制。实践上：改变是真实的但有限——它改变了**部署选择**（用户现在有了一个有基准数字支撑的理由，把一部分原来用 Opus 的工作负载换成更便宜、更快的 3.5 Sonnet），以及**行业叙事**（“中端即前沿”成为此后各家发布会的模板）。但这两个实践改变都建立在未经独立验证的数字上：如果数字背后的比较方法有偏，实践改变的方向可能是错的。
 
 ---
 
-## C. Assumptions map (first principles)
+## C. 假设图（第一性原理）
 
-| # | Assumption (paraphrase + location) | Type | Load-bearing? | Evidence in source | What would break it | Depends on |
+| # | 假设（转述 + 位置） | 类型 | 是否承重？ | 文件内证据 | 什么能打破它 | 依赖 |
 |---|---|---|---|---|---|---|
-| A1 | Higher scores on GPQA / MMLU / HumanEval / etc. = higher general intelligence / capability ("raises the industry bar for intelligence"). Announcement L6–7, L15. | Unvalidated | **Yes — root** | None offered; the inference is asserted, not argued. | Showing the gains are benchmark-specific (memorisation, format fit, prompt fit) with no transfer to held-out real tasks. | A2, A3 |
-| A2 | The reported benchmarks are uncontaminated: the model did not train on (near-)copies of the test items. | Unvalidated | **Yes** | Not reported / can't tell — no decontamination statement anywhere in either document. | Overlap analysis showing test items (or paraphrases) in training data; or a sharp drop on a fresh, post-cutoff benchmark. | — (root) |
-| A3 | Cross-model cells in Tables 1–2 are comparable, i.e. differences reflect models, not evaluation protocol. | Unvalidated | **Yes** | Undermined by the tables themselves: protocols differ *within* rows (e.g. MATH: 0-shot CoT for Claude/GPT-4o vs. 4-shot for Gemini vs. 4-shot CoT for Llama 3; MGSM: 0-shot CoT vs. 8-shot for Gemini; DROP: "Variable shots" for Gemini). Competitor numbers are taken from vendors' own reports (refs [8], [9], [16], [17]), not re-run under one harness. | Re-running all models under one harness with identical prompts/shots and seeing the ranking change. | A4 |
-| A4 | Competitor numbers quoted from OpenAI / Google / Meta publications are accurate and refer to the same model versions a user would meet. | Unvalidated | Yes | Citations only (Addendum refs [8], [9], [16]); no verification, no version pinning beyond "GPT-4o", "Gemini 1.5 Pro", "Llama 3 400B (April 15, 2024 checkpoint)". | Vendor re-measurement or independent replication showing different competitor scores under the stated protocol. | — |
-| A5 | The internal agentic coding evaluation measures real-world software-engineering ability. Addendum §2, "Agentic Coding". | Unvalidated | Yes (for C4) | Design described in prose (real PRs, hidden tests, sandboxed, agentic loop, multi-file edits) but **n not reported**, problem selection not described, no difficulty distribution, no baseline scaffold comparison. | A public replication (e.g. SWE-bench Verified on the same snapshot) giving a very different pass rate, or showing the gap vs. Opus vanishes with a fixed scaffold. | A6 |
-| A6 | The agentic scaffold / tooling given to each model in the internal evaluation was equivalent, so the 64% vs. 38% gap is a model gap. | Unvalidated | Yes (for C4) | Not reported / can't tell — scaffold, tools, iteration budget, and prompts are not described. | Same models, same scaffold, different tool budget → gap shrinks or reverses. | — |
-| A7 | Human-preference win rates vs. Claude 3 Opus measure capability improvements (not style, length, or rater expectation). Addendum §2.1. | Unvalidated | Partial | Method deferred to Claude 3 main model card §5.5 (not in this document); rater n, task n, blinding, tie handling, instructions — **not reported**. | Blinded replication with length-controlled outputs showing win rates near 50%. | — |
-| A8 | "Twice the speed of Claude 3 Opus" is a meaningful, reproducible speed comparison. Announcement L19. | Unvalidated | Partial (for C3) | No latency numbers, no task, no hardware, no tokens/sec, no measurement method — **not reported at all**. | Any latency measurement under stated conditions showing a materially different ratio. | — |
-| A9 | Refusal-rate differences (Table 4) measure better safety calibration rather than different refusal *style* or threshold tuning. | Soft | No | Wildchat/XSTest named; sizes and sampling not reported. | Showing the same models with a different system prompt reorder the refusal ranking. | — |
-| A10 | Needle-in-a-Haystack recall measures long-context retrieval ability relevant to real 200K-token use. Addendum §2, Table 5. | Soft | No | Anthropic's own variant of the task (ref [21]); synthetic needle, single fact. | Real long-document QA at 200K showing recall collapsing while NIAH stays ~99.7%. | — |
-| A11 | Safety: capability gains do not cross ASL-3 because the model "does not trigger the 4x effective compute threshold" for the full RSP protocol, and targeted testing found no threshold breach. Addendum §3.1. | Soft (policy) | Yes (for C7) | Threshold values **not reported**; quantitative CBRN/cyber/autonomy results **not reported** (only "did not exceed our safety thresholds"); UK AISI results **not published here**. The 4x-compute trigger is a policy convention, not a physical fact. | Publication of the threshold values and scores; an external evaluation finding a breach; or a showing that effective-compute accounting understates the capability jump. | A12 |
-| A12 | HHH (Helpful, Honest, Harmless) refusals only *underestimate* capability, and Anthropic's internal "non-refusal" elicitation recovers the true capability without inflating it. Addendum §3.2, final paragraph. | Unvalidated | Partial | Asserted; the elicitation technique is not described, and the authors themselves note results "may underestimate" a Helpful-only model. Direction of bias is assumed, not shown. | Showing the elicitation overshoots (e.g. by coaching the model into the answer) or undershoots unevenly across models. | — |
-| A13 | The June 2024 snapshot evaluated in the addendum is the same model users received at launch. | Unvalidated | Yes | No checkpoint/version identifier is reported anywhere, so identity between evaluated artefact and deployed artefact cannot be checked from these sources. | API/model-ID records showing the evaluated build differs from the launch build. | — (root) |
-| A14 | "State-of-the-art" means best on the reported benchmarks *as evaluated here*, not best on all relevant evaluations. | Soft (definitional) | Partial | The tables themselves contradict the unqualified reading: GPT-4o beats 3.5 Sonnet on MATH (76.6% vs. 71.1%) and MMMU (69.1% vs. 68.3%) in the same tables. | Any unreported benchmark where a competitor leads — already true within the document. | A3 |
+| A1 | 在 GPQA / MMLU / HumanEval 等基准上得分更高 = 一般智能 / 能力更高（"raises the industry bar for intelligence"，“提升了智能的行业标杆”）。公告 L6–7、L15。 | 未验证 | **是——根假设** | 未提供任何证据；这一推论是断言的，不是论证的。 | 证明这些提升只是基准特异的（记忆、格式适配、提示词适配），没有迁移到未见过的真实任务上。 | A2、A3 |
+| A2 | 所报告的基准未被污染：模型没有在（近似）复制的测试题上训练过。 | 未验证 | **是** | 未报告 / 说不清——两份文件中没有任何去污染声明。 | 重叠分析显示测试题（或其改写）在训练数据中出现；或在全新的、截止日期之后的基准上分数急剧下降。 | ——（根假设） |
+| A3 | 表 1–2 中的跨模型单元格是可比的，即差异反映的是模型，而不是评估协议。 | 未验证 | **是** | 表格本身削弱了它：同一行内协议不同（例如 MATH：Claude / GPT-4o 用 0-shot CoT，Gemini 用 4-shot，Llama 3 用 4-shot CoT；MGSM：0-shot CoT 对 Gemini 的 8-shot；DROP：Gemini 为 "Variable shots"）。竞品数字取自厂商自己的报告（参考文献 [8]、[9]、[16]、[17]），不是在同一框架下重跑的。 | 在同一框架下用相同的提示词 / 样本数重跑所有模型，看到排名改变。 | A4 |
+| A4 | 从 OpenAI / Google / Meta 出版物引用的竞品数字是准确的，并且指的是用户会遇到的同一模型版本。 | 未验证 | 是 | 只有引用（附录参考文献 [8]、[9]、[16]）；没有核实，除了 "GPT-4o"、"Gemini 1.5 Pro"、"Llama 3 400B（April 15, 2024 checkpoint）" 之外没有版本锁定。 | 厂商重新测量或独立复现显示，在所述协议下竞品分数不同。 | —— |
+| A5 | 内部智能体编码评估衡量的是真实世界的软件工程能力。附录 §2，"Agentic Coding"。 | 未验证 | 是（对 C4） | 设计以散文描述（真实 PR、隐藏测试、沙箱、智能体循环、多文件编辑），但 **n 未报告**，问题选择未描述，无难度分布，无基线脚手架比较。 | 公开复现（例如同一快照上的 SWE-bench Verified）给出非常不同的通过率，或显示在固定脚手架下与 Opus 的差距消失。 | A6 |
+| A6 | 在内部评估中，给每个模型的智能体脚手架 / 工具是等价的，因此 64% 对 38% 的差距是模型差距。 | 未验证 | 是（对 C4） | 未报告 / 说不清——脚手架、工具、迭代预算、提示词均未描述。 | 同样的模型、同样的脚手架、不同的工具预算 → 差距缩小或反转。 | —— |
+| A7 | 与 Claude 3 Opus 相比的人类偏好胜率衡量的是能力提升（而非风格、长度或评分者预期）。附录 §2.1。 | 未验证 | 部分 | 方法推迟到 Claude 3 主模型卡 §5.5（不在本文件中）；评分者 n、任务 n、盲法、平局处理、指令——**未报告**。 | 长度受控产出的盲法复现显示胜率接近 50%。 | —— |
+| A8 | "Twice the speed of Claude 3 Opus"（“速度是 Claude 3 Opus 的两倍”）是一次有意义、可复现的速度比较。公告 L19。 | 未验证 | 部分（对 C3） | 无延迟数字、无任务、无硬件、无每秒 token 数、无测量方法——**完全未报告**。 | 在所述条件下做的任何延迟测量显示比率与之有实质差异。 | —— |
+| A9 | 拒绝率差异（表 4）衡量的是更好的安全校准，而非不同的拒绝*风格*或阈值调校。 | 软假设 | 否 | Wildchat / XSTest 已具名；规模与抽样未报告。 | 显示同样的模型换一个系统提示词后，拒绝率排名重新排序。 | —— |
+| A10 | Needle-in-a-Haystack（大海捞针）回忆率衡量的是与真实 20 万 token 使用相关的长上下文检索能力。附录 §2，表 5。 | 软假设 | 否 | Anthropic 自己的任务变体（参考文献 [21]）；合成针、单一事实。 | 真实长文档问答在 20 万 token 下回忆率崩溃，而 NIAH 仍保持约 99.7%。 | —— |
+| A11 | 安全：能力提升没有跨过 ASL-3，因为模型 "does not trigger the 4x effective compute threshold"（“没有触发 4 倍有效算力阈值”）从而启动完整 RSP 协议，且针对性测试未发现阈值 breach。附录 §3.1。 | 软假设（政策性） | 是（对 C7） | 阈值**未报告**；定量的 CBRN / 网络安全 / 自主性结果**未报告**（只有 "did not exceed our safety thresholds"，“未超过我们的安全阈值”）；UK AISI 的结果**未在此发表**。4 倍算力触发条件是一项政策约定，不是物理事实。 | 公布阈值与分数；外部评估发现 breach；或证明有效算力的核算低估了能力跃升。 | A12 |
+| A12 | HHH（Helpful, Honest, Harmless；乐于助人、诚实、无害）导致的拒绝只会*低估*能力，而 Anthropic 内部的“非拒绝”诱发（elicitation）能恢复真实能力而不夸大它。附录 §3.2，最后一段。 | 未验证 | 部分 | 只是断言；诱发技术未描述，作者自己也指出结果 "may underestimate"（“可能低估”）一个仅 Helpful 的模型。偏差方向是假定的，不是证明的。 | 显示诱发 overshoot（例如通过引导模型得到答案）或在不同模型间低估程度不均。 | —— |
+| A13 | 附录中评估的 2024 年 6 月快照就是用户在发布时收到的模型。 | 未验证 | 是 | 任何地方均未报告检查点 / 版本标识符，因此无法从这些资料核查被评估物与已部署物是否同一。 | API / 模型 ID 记录显示被评估的构建与发布构建不同。 | ——（根假设） |
+| A14 | "State-of-the-art"（“最先进”）指的是在*此处评估的*已报告基准上最好，而非在所有相关评估上最好。 | 软假设（定义性） | 部分 | 表格本身反驳了无保留的读法：同一表格中 GPT-4o 在 MATH（76.6% 对 71.1%）和 MMMU（69.1% 对 68.3%）上击败 3.5 Sonnet。 | 任何未报告的、竞品领先的基准——在文件内已经成立。 | A3 |
 
-**Root assumptions:** A1 (benchmark score = intelligence), A2 (no contamination), A13 (evaluated model = shipped model). If A2 fails, every Table 1–2 cell is suspect; if A13 fails, the numbers describe a different artefact than the product; if A1 fails, the numbers can be exactly right and the headline still be wrong.
+**根假设：** A1（基准分数 = 智能）、A2（无污染）、A13（被评估模型 = 已交付模型）。如果 A2 倒下，表 1–2 的每个单元格都可疑；如果 A13 倒下，这些数字描述的是另一个产物，而不是该产品；如果 A1 倒下，数字可以完全正确，而标题宣称仍然是错的。
 
 ---
 
-## D. Design, controls, metrics, statistics
+## D. 设计、对照、指标、统计
 
-**Design type:** None of the standard experimental designs apply. This is a **vendor benchmark report**: a set of pre-existing public benchmarks run (by Anthropic, for its own model; quoted from vendor publications for competitors) plus one internal, non-public evaluation and one human-preference study. There is no hypothesis, no randomisation, no pre-registration, no control group in the experimental sense — the "controls" are the comparator models in the tables.
+**设计类型：** 没有一种标准实验设计适用。这是一份**厂商基准报告**：一组已有的公开基准（自家模型由 Anthropic 运行；竞品数字引自厂商自己的出版物）加一次内部非公开评估和一次人类偏好研究。没有假设、没有随机化、没有预注册、没有实验意义上的对照组——表中的对照模型就是“对照”。
 
-**What was actually done (as described):**
+**实际做了什么（按描述）：**
 
-- **Standard benchmarks (Addendum Tables 1–2):** GPQA Diamond, MMLU (two protocols), MATH, HumanEval, MGSM, DROP, BIG-Bench Hard, GSM8K, MMMU (validation), MathVista (testmini), AI2D (test), ChartQA (test), DocVQA (test). Shot counts and chain-of-thought use are stated per row (see §E) but **prompts, harness, harness version, decoding settings (temperature, top-p, max tokens), and number of runs are not reported**.
-- **Agentic coding (Table 3):** problems based on real open-source pull requests; model must implement the change (typically 3–4 files, up to 20); hidden tests must all pass; model may write/run code in an agentic loop and self-correct; sandboxed, no internet. **n (number of problems), problem selection criteria, time/step budget, scaffold, and prompts are not reported.**
-- **Refusals (Table 4):** Wildchat (toxic / non-toxic splits) and XSTest; correct vs. incorrect refusal rates. **Dataset sizes, sampling, and prompt format not reported.**
-- **Needle in a Haystack (Table 5):** Anthropic's own variant of the task; average recall at context lengths up to 200K. **Needle type, prompt (one "modified prompt" mentioned for Figure 1), number of trials per length — not reported.**
-- **Human feedback (§2.1, Figure 3):** raters chat with models on task-specific instructions; win rate vs. Claude 3 Opus baseline (Opus = 50% by construction). Method deferred to Claude 3 main model card §5.5. **Rater count, task count, blinding, agreement, tie handling, significance — not reported in this document.**
-- **Safety (§3):** CBRN automated knowledge tests + non-expert uplift; cybersecurity capture-the-flag; autonomy via code-writing evals; "thresholds of concern" defined per domain (values not reported); UK AISI pre-deployment testing of a "near-final model"; METR "initial exploration" of autonomy. **No quantitative safety results are reported.**
+- **标准基准（附录表 1–2）：** GPQA Diamond、MMLU（两种协议）、MATH、HumanEval、MGSM、DROP、BIG-Bench Hard、GSM8K、MMMU（验证集）、MathVista（testmini）、AI2D（test）、ChartQA（test）、DocVQA（test）。每行注明了样本数与思维链使用（见 §E），但**提示词、评估框架、框架版本、解码设置（温度、top-p、最大 token 数）与运行次数均未报告**。
+- **智能体编码（表 3）：** 问题基于真实开源 pull request；模型必须实现改动（通常 3–4 个文件，最多 20 个）；隐藏测试必须全部通过；模型可以在智能体循环中编写 / 运行代码并自我修正；沙箱环境，无互联网。**n（问题数）、问题选择标准、时间 / 步数预算、脚手架、提示词均未报告。**
+- **拒绝（表 4）：** Wildchat（有毒 / 无毒分组）与 XSTest；正确拒绝率与错误拒绝率。**数据集规模、抽样、提示词格式未报告。**
+- **大海捞针（表 5）：** Anthropic 自己的任务变体；上下文长度 up to 200K 时的平均回忆率。**针的类型、提示词（图 1 提到一个 "modified prompt"）、每个长度的试验次数——未报告。**
+- **人类反馈（§2.1，图 3）：** 评分者按任务说明与模型对话；相对于 Claude 3 Opus 基线的胜率（Opus 按构造为 50%）。方法推迟到 Claude 3 主模型卡 §5.5。**评分者数量、任务数量、盲法、一致性、平局处理、显著性——本文件未报告。**
+- **安全（§3）：** CBRN 自动化知识测试 + 非专家 uplift；网络安全夺旗赛（capture-the-flag）；通过代码编写评估测自主性；按领域定义 "thresholds of concern"（阈值未报告）；UK AISI 对 "near-final model"（接近最终的模型）做部署前测试；METR 对自主性做 "initial exploration"（初步探索）。**未报告任何定量安全结果。**
 
-**Controls / baselines:** Claude 3 Opus, Claude 3 Sonnet, Claude 3 Haiku (and Claude 2.1 for NIAH only) as internal baselines; GPT-4o, GPT-4 Turbo, Gemini 1.5 Pro, Llama 3 400B as external comparators. **Tuning/compute matching: Can't tell** — and in fact demonstrably *unmatched* in protocol: different shot counts and CoT settings across models within the same benchmark row (see A3/A4). Competitor scores were not re-run by Anthropic; they are quoted from the competitors' own publications. This is the single most important design fact in the document.
+**对照 / 基线：** Claude 3 Opus、Claude 3 Sonnet、Claude 3 Haiku（Claude 2.1 仅用于 NIAH）作为内部基线；GPT-4o、GPT-4 Turbo、Gemini 1.5 Pro、Llama 3 400B 作为外部对照。**调参与算力是否匹配：说不清**——事实上在协议上明显*不匹配*：同一基准行内不同模型的样本数与 CoT 设置不同（见 A3/A4）。竞品分数不是由 Anthropic 重跑的，而是引自竞品自己的出版物。这是本文件最重要的设计事实。
 
-**Blinding:** Not reported / can't tell for human evals (and the method is deferred to another document). Not applicable to automated benchmarks, except that benchmark contamination status is unreported.
+**盲法：** 人类评估未报告 / 说不清（且方法推迟到另一份文件）。自动化基准不适用盲法，但基准污染状态未报告。
 
-**Metrics:** Accuracy / pass rate (%, one decimal), F1 (DROP), ANLS (DocVQA), relaxed accuracy (ChartQA), average recall (NIAH), win rate (human eval), refusal rate (Table 4). No primary vs. secondary metric distinction is made — every reported number is presented as supporting the headline.
+**指标：** 准确率 / 通过率（%，一位小数）、F1（DROP）、ANLS（DocVQA）、宽松准确率（relaxed accuracy，ChartQA）、平均回忆率（NIAH）、胜率（人类评估）、拒绝率（表 4）。没有区分主要指标与次要指标——每个已报告的数字都被呈现为支撑标题宣称。
 
-**Statistics — everything below is "not reported":**
+**统计——以下全部是“未报告”：**
 
-| Item | Status |
+| 项目 | 状态 |
 |---|---|
-| Seeds / number of runs | Not reported (all tables) |
-| Error bars (SD / SE / CI) | Not reported for any benchmark table (Tables 1–5). The October addendum's OSWorld table does report 95% CIs — the June addendum does not |
-| Effect sizes, p-values, multiple-comparison correction | Not reported |
-| Sample sizes (n) | Not reported for any benchmark (GPQA Diamond, MATH, HumanEval, agentic coding, human eval, Wildchat/XSTest, NIAH trials) |
-| Compute (training FLOPs, hardware, time) | Not reported |
-| Training data, architecture, parameters | Not reported |
-| Eval harness + version, prompts, decoding | Not reported (except shot/CoT labels per row) |
-| Contamination / decontamination analysis | Not reported |
-| Data / code availability | No code, no prompts, no raw results, no eval scripts released with these documents |
+| 种子 / 运行次数 | 未报告（全部表格） |
+| 误差棒（SD / SE / CI） | 任何基准表均未报告（表 1–5）。10 月附录的 OSWorld 表确实报告了 95% CI——6 月附录没有 |
+| 效应量、p 值、多重比较校正 | 未报告 |
+| 样本量（n） | 任何基准均未报告（GPQA Diamond、MATH、HumanEval、智能体编码、人类评估、Wildchat / XSTest、NIAH 试验次数） |
+| 算力（训练 FLOPs、硬件、时间） | 未报告 |
+| 训练数据、架构、参数 | 未报告 |
+| 评估框架 + 版本、提示词、解码 | 未报告（每行仅有样本数 / CoT 标签） |
+| 污染 / 去污染分析 | 未报告 |
+| 数据 / 代码可用性 | 未随这些文件发布代码、提示词、原始结果或评估脚本 |
 
-**Checklist verdict (NeurIPS / Pineau items, applied to this document as a capability claim):** claims↔results consistency — *partial* (headline overstates the mixed table, see §G); limitations — *partially stated* (see §H, author-stated); reproducibility path — **No**; experimental setting — *partial* (shots/CoT only); statistical significance — **No**; compute — **No**; data/code — **No**; ethics/safety — *partial* (ASL-2 asserted, quantitative results withheld).
+**检查表结论（NeurIPS / Pineau 条目，适用于本文件作为能力宣称）：** 主张↔结果一致性——*部分*（标题宣称夸大了混杂的表格，见 §G）；局限——*部分陈述*（见 §H，作者自述）；可复现路径——**无**；实验设置——*部分*（仅样本数 / CoT）；统计显著性——**无**；算力——**无**；数据 / 代码——**无**；伦理 / 安全——*部分*（ASL-2 已断言，定量结果未公开）。
 
-**Plain statement (required):** this is a model launch post plus a vendor model card, not a peer-reviewed paper. There is no experiment in the scientific sense — no manipulated variable, no randomisation, no statistical inference. The correct standard of appraisal is "how much should a reader trust these vendor-reported numbers and the claims built on them", not "was the hypothesis test well powered".
+**必须明说的一句话：** 这是一篇模型发布帖加厂商模型卡，不是同行评审论文。科学意义上没有实验——没有操纵变量、没有随机化、没有统计推断。正确的评估标准是“读者应该在多大程度上信任这些厂商报告的数字以及建立在其上的宣称”，而不是“假设检验的功效是否充足”。
 
 ---
 
-## E. Numbers ledger
+## E. 数字台账
 
-**How to read this ledger.** Every number below is a *vendor-reported point estimate* from the June 2024 addendum (or, where marked, the announcement). Conditions are given exactly as the source states them; where the source is silent, the cell says **not reported** rather than being filled in from outside knowledge. **A number without conditions is unusable as evidence** — and for this document, *no* number carries a complete condition set (no harness, no decoding, no n, no seeds, no error bars anywhere). Competitor cells are quoted from competitors' own publications, not measured by Anthropic.
+**如何读这份台账。** 以下每个数字都是 2024 年 6 月附录中的*厂商报告点估计*（或在标注处为公告中的数字）。条件按资料所述原样给出；资料沉默处，单元格写 **未报告**，而不是用外部知识填补。**没有条件的数字不能用作证据**——而对本文件而言，*没有任何*数字带有完整的条件集（没有任何地方有评估框架、解码、n、种子、误差棒）。竞品单元格引自竞品自己的出版物，不是 Anthropic 测量的。
 
-**Reconstruction note on Table 1:** the PDF text extraction scrambles the table's column order. The reconstruction below follows the addendum's stated column order — Claude 3.5 Sonnet | Claude 3 Opus | Claude 3 Sonnet | GPT-4o | GPT-4 Turbo | Gemini 1.5 Pro | Llama 3 400B (Instruct) — and cross-checks each row's values against the row's stated protocols and against the October addendum's re-presentation of the June numbers (used only as a consistency check on column assignment, not as a source of new numbers). Where the extraction left genuine ambiguity it is flagged in the row.
+**关于表 1 的重构说明：** PDF 文本抽取打乱了表格的列顺序。以下重构遵循附录所述的列顺序——Claude 3.5 Sonnet | Claude 3 Opus | Claude 3 Sonnet | GPT-4o | GPT-4 Turbo | Gemini 1.5 Pro | Llama 3 400B (Instruct)——并把每行的值与该行所述协议、以及 10 月附录对 6 月数字的重新呈现做了交叉核对（仅用作列归属的一致性检查，不作为新数字的来源）。抽取确实留下歧义的地方已在行内标注。
 
-### E1. Addendum Table 1 — reasoning, coding, QA (Claude 3.5 Sonnet column; comparators in parentheses)
+### E1. 附录表 1——推理、编码、问答（Claude 3.5 Sonnet 列；对照值在括号内）
 
-| # | Number | What (metric, conditions as stated) | Exact conditions (model / checkpoint / split / harness / decoding / n / seeds) | Location | Same-condition baseline / comparator | Supports claim? |
+| # | 数字 | 是什么（指标、所述条件） | 确切条件（模型 / 检查点 / 切分 / 评估框架 / 解码 / n / 种子） | 位置 | 同条件基线 / 对照 | 支持主张吗？ |
 |---|---|---|---|---|---|---|
-| E1.1 | **59.4%** | GPQA (Diamond), graduate-level Q&A, 0-shot CoT | Model: Claude 3.5 Sonnet (June 2024 snapshot; checkpoint not identified). Split/version: GPQA Diamond (ref [1]); version not stated. Harness: not reported. Decoding: not reported. n: not reported. Seeds: not reported | Add. Table 1 | Opus 50.4%; Sonnet 40.4%; GPT-4o 53.6%; GPT-4T 48.0%; Gemini —; Llama 3 400B — | Yes — leads all reported cells |
-| E1.2 | **67.2%** | GPQA (Diamond), Maj@32, 5-shot CoT | As E1.1, except majority vote over 32 samples (Maj@32) | Add. Table 1 | Opus 59.5%; Sonnet 46.3%; all others — | Yes — leads reported cells; **note:** no competitor ran this protocol, so "industry benchmark" here means "best among Claude models" |
-| E1.3 | **90.4%** | MMLU, general reasoning, 5-shot CoT | As above; MMLU (ref [2]); split/version not stated | Add. Table 1 | Opus 88.2%; Sonnet 81.5%; GPT-4o —; GPT-4T —; Gemini —; Llama — | Partial — leads Claude models only; **no competitor value is reported under this protocol**, so the announcement's "new industry benchmark for MMLU" rests on a protocol no competitor was measured on |
-| E1.4 | **88.7%** | MMLU, 5-shot (no CoT) | As above | Add. Table 1 | Opus 86.8%; Sonnet 78.3%; GPT-4o —; GPT-4T —; Gemini 85.9%; Llama 86.1% | Partial — leads reported cells, but GPT-4o cell is empty |
-| E1.5 | **88.3%** | MMLU, 0-shot CoT | As above. Footnote 2: OpenAI's simple-evals suite lists 88.7% for GPT-4o and 86.5% for GPT-4-turbo-2024-04-09 under 0-shot CoT | Add. Table 1, fn 2 | Opus 85.7%; Sonnet 77.1%; **GPT-4o 88.7%**; GPT-4T 86.5%; Gemini —; Llama — | **No — GPT-4o scores higher (88.7% vs. 88.3%) under the identical 0-shot CoT protocol.** This directly qualifies C2 |
-| E1.6 | **71.1%** | MATH, mathematical problem solving, 0-shot CoT | MATH (ref [10]); split/version not stated | Add. Table 1 | Opus 60.1%; Sonnet 43.1%; **GPT-4o 76.6% (0-shot CoT)**; GPT-4T 72.6% (0-shot CoT); Gemini 67.7% (**4-shot, different protocol**); Llama 57.8% (**4-shot CoT, different protocol**) | **No — loses to GPT-4o by 5.5 pp and to GPT-4T by 1.5 pp.** Also: Gemini/Llama were measured under different protocols, so those cells are not comparable |
-| E1.7 | **92.0%** | HumanEval, Python coding tasks, 0-shot | HumanEval (ref [3]); pass@1 implied, not stated | Add. Table 1 | Opus 84.9%; Sonnet 73.0%; GPT-4o 90.2%; GPT-4T 87.1%; Gemini 84.1%; Llama 84.1% | Yes — leads all reported cells, by 1.8 pp over GPT-4o |
-| E1.8 | **91.6%** | MGSM, multilingual math, 0-shot CoT | MGSM (ref [11]) | Add. Table 1 | Opus 90.7%; Sonnet 83.5%; GPT-4o 90.5%; GPT-4T 88.5%; Gemini 87.5% (**8-shot, different protocol**); Llama — | Yes — leads reported cells, by 0.9 pp over Opus; Gemini cell not comparable (8-shot) |
-| E1.9 | **87.1** | DROP, reading comprehension + arithmetic, F1 score, 3-shot | DROP (ref [12]). Footnote 1: DROP evaluated on the **pretrained** version of the model, not the Instruct version (unlike the rest of the table) | Add. Table 1, fn 1 | Opus 83.1; Sonnet 78.9; GPT-4o 83.4; GPT-4T 86.0; Gemini 74.9 ("Variable shots"); Llama 83.5 | Yes — leads, by 1.1 over GPT-4T. **Caveat:** pretrained-vs-instruct mixing (fn 1) and Gemini's "Variable shots" make this row the least standardised in the table |
-| E1.10 | **93.1%** | BIG-Bench Hard, mixed evaluations, 3-shot CoT | BBH (refs [13, 14]). Footnote 1: evaluated on the **pretrained** version | Add. Table 1, fn 1 | Opus 86.8%; Sonnet 82.9%; GPT-4o —; GPT-4T —; Gemini 89.2%; Llama 85.3% | Yes — leads reported cells; no GPT-4o/T values reported |
-| E1.11 | **96.4%** | GSM8K, grade-school math, 0-shot CoT | GSM8K (ref [15]) | Add. Table 1 | Opus 95.0%; Sonnet 92.3%; GPT-4o —; GPT-4T —; Gemini 90.8% (**11-shot**); Llama 94.1% (**8-shot CoT**) | Partial — leads reported cells, but both non-Claude competitors used different shot counts and GPT cells are empty |
+| E1.1 | **59.4%** | GPQA（Diamond），研究生级问答，0-shot CoT | 模型：Claude 3.5 Sonnet（2024 年 6 月快照；检查点未标识）。切分 / 版本：GPQA Diamond（参考文献 [1]）；版本未说明。评估框架：未报告。解码：未报告。n：未报告。种子：未报告 | 附录表 1 | Opus 50.4%；Sonnet 40.4%；GPT-4o 53.6%；GPT-4T 48.0%；Gemini —；Llama 3 400B — | 是——领先全部已报告单元格 |
+| E1.2 | **67.2%** | GPQA（Diamond），Maj@32，5-shot CoT | 同 E1.1，但对 32 个样本做多数投票（Maj@32） | 附录表 1 | Opus 59.5%；Sonnet 46.3%；其余全部 — | 是——领先已报告单元格；**注意：** 没有竞品跑过这一协议，所以这里的“行业基准”实际意思是“Claude 模型中最好” |
+| E1.3 | **90.4%** | MMLU，一般推理，5-shot CoT | 同上；MMLU（参考文献 [2]）；切分 / 版本未说明 | 附录表 1 | Opus 88.2%；Sonnet 81.5%；GPT-4o —；GPT-4T —；Gemini —；Llama — | 部分——仅领先 Claude 模型；**在这一协议下没有报告任何竞品值**，所以公告所说的“新的 MMLU 行业基准”建立在一个没有竞品被测量的协议上 |
+| E1.4 | **88.7%** | MMLU，5-shot（无 CoT） | 同上 | 附录表 1 | Opus 86.8%；Sonnet 78.3%；GPT-4o —；GPT-4T —；Gemini 85.9%；Llama 86.1% | 部分——领先已报告单元格，但 GPT-4o 单元格为空 |
+| E1.5 | **88.3%** | MMLU，0-shot CoT | 同上。脚注 2：OpenAI 的 simple-evals 套件在 0-shot CoT 下为 GPT-4o 列出 88.7%，为 GPT-4-turbo-2024-04-09 列出 86.5% | 附录表 1，脚注 2 | Opus 85.7%；Sonnet 77.1%；**GPT-4o 88.7%**；GPT-4T 86.5%；Gemini —；Llama — | **否——在相同的 0-shot CoT 协议下 GPT-4o 分数更高（88.7% 对 88.3%）。** 这直接限定了 C2 |
+| E1.6 | **71.1%** | MATH，数学解题，0-shot CoT | MATH（参考文献 [10]）；切分 / 版本未说明 | 附录表 1 | Opus 60.1%；Sonnet 43.1%；**GPT-4o 76.6%（0-shot CoT）**；GPT-4T 72.6%（0-shot CoT）；Gemini 67.7%（**4-shot，不同协议**）；Llama 57.8%（**4-shot CoT，不同协议**） | **否——比 GPT-4o 低 5.5 个百分点，比 GPT-4T 低 1.5 个百分点。** 另外：Gemini / Llama 是在不同协议下测量的，所以这些单元格不可比 |
+| E1.7 | **92.0%** | HumanEval，Python 编码任务，0-shot | HumanEval（参考文献 [3]）；隐含 pass@1，未明说 | 附录表 1 | Opus 84.9%；Sonnet 73.0%；GPT-4o 90.2%；GPT-4T 87.1%；Gemini 84.1%；Llama 84.1% | 是——领先全部已报告单元格，比 GPT-4o 高 1.8 个百分点 |
+| E1.8 | **91.6%** | MGSM，多语言数学，0-shot CoT | MGSM（参考文献 [11]） | 附录表 1 | Opus 90.7%；Sonnet 83.5%；GPT-4o 90.5%；GPT-4T 88.5%；Gemini 87.5%（**8-shot，不同协议**）；Llama — | 是——领先已报告单元格，比 Opus 高 0.9 个百分点；Gemini 单元格不可比（8-shot） |
+| E1.9 | **87.1** | DROP，阅读理解 + 算术，F1 分数，3-shot | DROP（参考文献 [12]）。脚注 1：DROP 是在模型的**预训练**版本上评估的，不是 Instruct 版本（与表内其余部分不同） | 附录表 1，脚注 1 | Opus 83.1；Sonnet 78.9；GPT-4o 83.4；GPT-4T 86.0；Gemini 74.9（"Variable shots"）；Llama 83.5 | 是——领先，比 GPT-4T 高 1.1。**注意：** 预训练版与 Instruct 版混用（脚注 1）以及 Gemini 的 "Variable shots" 使这一行成为表内标准化程度最低的一行 |
+| E1.10 | **93.1%** | BIG-Bench Hard，混合评估，3-shot CoT | BBH（参考文献 [13, 14]）。脚注 1：在**预训练**版本上评估 | 附录表 1，脚注 1 | Opus 86.8%；Sonnet 82.9%；GPT-4o —；GPT-4T —；Gemini 89.2%；Llama 85.3% | 是——领先已报告单元格；未报告 GPT-4o / T 的值 |
+| E1.11 | **96.4%** | GSM8K，小学数学，0-shot CoT | GSM8K（参考文献 [15]） | 附录表 1 | Opus 95.0%；Sonnet 92.3%；GPT-4o —；GPT-4T —；Gemini 90.8%（**11-shot**）；Llama 94.1%（**8-shot CoT**） | 部分——领先已报告单元格，但两个非 Claude 竞品用了不同的样本数，且 GPT 单元格为空 |
 
-### E2. Addendum Table 2 — vision / multimodal (all 0-shot; MMMU, MathVista, ChartQA use CoT before the final answer)
+### E2. 附录表 2——视觉 / 多模态（全部 0-shot；MMMU、MathVista、ChartQA 在最终答案前使用 CoT）
 
-| # | Number | What (conditions as stated) | Exact conditions | Location | Comparators | Supports claim? |
+| # | 数字 | 是什么（所述条件） | 确切条件 | 位置 | 对照 | 支持主张吗？ |
 |---|---|---|---|---|---|---|
-| E2.1 | **68.3%** | MMMU (validation), visual QA, 0-shot + CoT | MMMU validation split (ref [18]); harness/decoding/n/seeds: not reported | Add. Table 2 | Opus 59.4%; Sonnet 53.1%; **GPT-4o 69.1%**; GPT-4T 63.1%; Gemini 62.2% | **No — GPT-4o leads by 0.8 pp.** C5's "surpassing … on standard vision benchmarks" does not hold for MMMU |
-| E2.2 | **67.7%** | MathVista (testmini), math reasoning, 0-shot + CoT | MathVista testmini (ref [4]) | Add. Table 2 | Opus 50.5%; Sonnet 47.9%; GPT-4o 63.8%; GPT-4T 58.1%; Gemini 63.9% | Yes — leads by 3.8 pp over Gemini |
-| E2.3 | **94.7%** | AI2D (test), science diagrams, 0-shot | AI2D test (ref [7]) | Add. Table 2 | Opus 88.1%; Sonnet 88.7%; GPT-4o 94.2%; GPT-4T 89.4%; Gemini 94.4% | Yes — leads, by 0.3 pp over Gemini and 0.5 pp over GPT-4o (within any plausible noise band — but no error bars are reported, so this cannot be assessed) |
-| E2.4 | **90.8%** | ChartQA (test, relaxed accuracy), 0-shot + CoT | ChartQA test (ref [5]) | Add. Table 2 | Opus 80.8%; Sonnet 81.1%; GPT-4o 85.7%; GPT-4T 78.1%; Gemini 87.2% | Yes — leads by 3.6 pp over Gemini |
-| E2.5 | **95.2%** | DocVQA (test, ANLS score), 0-shot | DocVQA test (ref [6]) | Add. Table 2 | Opus 89.3%; Sonnet 89.5%; GPT-4o 92.8%; GPT-4T 87.2%; Gemini 93.1% | Yes — leads by 2.1 pp over Gemini |
+| E2.1 | **68.3%** | MMMU（验证集），视觉问答，0-shot + CoT | MMMU 验证切分（参考文献 [18]）；评估框架 / 解码 / n / 种子：未报告 | 附录表 2 | Opus 59.4%；Sonnet 53.1%；**GPT-4o 69.1%**；GPT-4T 63.1%；Gemini 62.2% | **否——GPT-4o 领先 0.8 个百分点。** C5 的“在标准视觉基准上超过……”对 MMMU 不成立 |
+| E2.2 | **67.7%** | MathVista（testmini），数学推理，0-shot + CoT | MathVista testmini（参考文献 [4]） | 附录表 2 | Opus 50.5%；Sonnet 47.9%；GPT-4o 63.8%；GPT-4T 58.1%；Gemini 63.9% | 是——比 Gemini 领先 3.8 个百分点 |
+| E2.3 | **94.7%** | AI2D（test），科学图解，0-shot | AI2D test（参考文献 [7]） | 附录表 2 | Opus 88.1%；Sonnet 88.7%；GPT-4o 94.2%；GPT-4T 89.4%；Gemini 94.4% | 是——领先，比 Gemini 高 0.3 个百分点、比 GPT-4o 高 0.5 个百分点（在任何可信的噪声范围内——但未报告误差棒，所以无法评估） |
+| E2.4 | **90.8%** | ChartQA（test，宽松准确率 relaxed accuracy），0-shot + CoT | ChartQA test（参考文献 [5]） | 附录表 2 | Opus 80.8%；Sonnet 81.1%；GPT-4o 85.7%；GPT-4T 78.1%；Gemini 87.2% | 是——比 Gemini 领先 3.6 个百分点 |
+| E2.5 | **95.2%** | DocVQA（test，ANLS 分数），0-shot | DocVQA test（参考文献 [6]） | 附录表 2 | Opus 89.3%；Sonnet 89.5%；GPT-4o 92.8%；GPT-4T 87.2%；Gemini 93.1% | 是——比 Gemini 领先 2.1 个百分点 |
 
-### E3. Agentic coding, refusals, long context, human preference (Addendum Tables 3–5, §2.1)
+### E3. 智能体编码、拒绝、长上下文、人类偏好（附录表 3–5，§2.1）
 
-| # | Number | What (conditions as stated) | Exact conditions | Location | Comparators | Supports claim? |
+| # | 数字 | 是什么（所述条件） | 确切条件 | 位置 | 对照 | 支持主张吗？ |
 |---|---|---|---|---|---|---|
-| E3.1 | **64%** | Internal agentic coding eval: % of problems where the final submission passed **all** tests | Real open-source PRs; multi-file edits (typically 3–4 files, up to 20); agentic loop with code execution + self-correction; sandboxed, no internet; hidden tests. **n, problem selection, step/time budget, scaffold, prompts, seeds: not reported** | Add. §2 + Table 3 | Opus 38%; Sonnet 21%; Haiku 17%. **No external model was run on this eval** | Yes, within Claude models — a 26 pp gap over Opus. But it is an internal, non-public eval with no n and no scaffold description, so the number cannot be independently checked or compared with any other lab's model |
-| E3.2 | **96.4%** | Wildchat Toxic: correct refusals (higher better) | Wildchat (ref [19]); sizes/sampling/prompts: not reported | Add. Table 4 | Opus 92.0%; Sonnet 93.6%; Haiku 90.0% | Yes — highest correct-refusal rate among Claude models |
-| E3.3 | **11.0%** | Wildchat Non-toxic: incorrect refusals (lower better) | As above | Add. Table 4 | Opus 11.9%; Sonnet 8.8%; Haiku 6.6% | Partial — better than Opus, but **worse than Sonnet (8.8%) and Haiku (6.6%)**; the addendum's prose ("outperformed Opus on both dimensions") is true only vs. Opus, not vs. all Claude models |
-| E3.4 | **1.7%** | XSTest: incorrect refusals (lower better) | XSTest (ref [20]); size: not reported | Add. Table 4 | Opus 8.3%; Sonnet 36.6%; Haiku 33.1% | Yes — large improvement over all Claude models; the most striking refusal result in the document |
-| E3.5 | **99.7%** | Needle in a Haystack: average recall, all context lengths (up to 200K) | Anthropic's own variant (refs [21, 22]); needle/prompt/trials-per-length: not reported | Add. Table 5, Fig. 1–2 | Opus 99.4%; Sonnet 95.4%; Haiku 95.9%; Claude 2.1 94.5% | Yes — but near-ceiling for both 3.5 Sonnet and Opus; the task is a synthetic single-fact retrieval, not a test of real long-document reasoning |
-| E3.6 | **99.7%** | Needle in a Haystack: average recall at 200K context length specifically | As above | Add. Table 5 | Opus 98.3%; Sonnet 91.4%; Haiku 91.9%; Claude 2.1 92.7% | Yes — holds recall at the full 200K window where other models drop ~7 pp |
-| E3.7 | **82% / 73% / 73%** | Human-preference win rate vs. Claude 3 Opus baseline, domain experts: Law 82%, Finance 73%, Philosophy 73% | Raters chat with models, task-specific instructions; win-rate method deferred to Claude 3 main card §5.5. **Rater n, task n, blinding, ties: not reported** | Add. §2.1 (prose; Fig. 3) | Opus = 50% by construction (baseline vs. itself) | Yes, as reported — but with no n and no method in this document, the win rates are uninterpretable as effect sizes |
-| E3.8 | (other Fig. 3 per-task win rates) | Human-preference win rates for Coding, Documents, Medicine, Creative Writing, Multilingual, STEM, Instruction-Following, Honesty, Vision, Harmlessness, Helpful-Only | Figure 3 only; the PDF text extraction scrambles the label-to-value mapping | Add. Fig. 3 | Opus = 50% by construction | **UNVERIFIED — see "Unverified / could not verify".** Only the three values in E3.7 are confirmed by the prose; the rest are not reliably recoverable from the text fetch and are not presented as established |
+| E3.1 | **64%** | 内部智能体编码评估：最终提交通过**全部**测试的问题占比 | 真实开源 PR；多文件编辑（通常 3–4 个文件，最多 20 个）；带代码执行 + 自我修正的智能体循环；沙箱，无互联网。**n、问题选择、步骤 / 时间预算、脚手架、提示词、种子：未报告** | 附录 §2 + 表 3 | Opus 38%；Sonnet 21%；Haiku 17%。**没有外部模型跑过这一评估** | 是，在 Claude 模型内——比 Opus 高 26 个百分点。但这是内部非公开评估，无 n、无脚手架描述，所以该数字无法独立核查，也无法与任何其他实验室的模型比较 |
+| E3.2 | **96.4%** | Wildchat 有毒：正确拒绝率（越高越好） | Wildchat（参考文献 [19]）；规模 / 抽样 / 提示词：未报告 | 附录表 4 | Opus 92.0%；Sonnet 93.6%；Haiku 90.0% | 是——Claude 模型中正确拒绝率最高 |
+| E3.3 | **11.0%** | Wildchat 无毒：错误拒绝率（越低越好） | 同上 | 附录表 4 | Opus 11.9%；Sonnet 8.8%；Haiku 6.6% | 部分——优于 Opus，但**差于 Sonnet（8.8%）和 Haiku（6.6%）**；附录正文（"outperformed Opus on both dimensions"，“在两个维度上都超过 Opus”）仅对 Opus 为真，不对全部 Claude 模型为真 |
+| E3.4 | **1.7%** | XSTest：错误拒绝率（越低越好） | XSTest（参考文献 [20]）；规模：未报告 | 附录表 4 | Opus 8.3%；Sonnet 36.6%；Haiku 33.1% | 是——比全部 Claude 模型大幅改善；是本文件中最引人注目的拒绝结果 |
+| E3.5 | **99.7%** | 大海捞针：平均回忆率，全部上下文长度（up to 200K） | Anthropic 自己的变体（参考文献 [21, 22]）；针的类型 / 提示词 / 每个长度的试验次数：未报告 | 附录表 5，图 1–2 | Opus 99.4%；Sonnet 95.4%；Haiku 95.9%；Claude 2.1 94.5% | 是——但 3.5 Sonnet 与 Opus 都接近天花板；该任务是合成的单事实检索，不是真实长文档推理的测试 |
+| E3.6 | **99.7%** | 大海捞针：200K 上下文长度 specifically 的平均回忆率 | 同上 | 附录表 5 | Opus 98.3%；Sonnet 91.4%；Haiku 91.9%；Claude 2.1 92.7% | 是——在完整的 200K 窗口内保持回忆率，其他模型下降约 7 个百分点 |
+| E3.7 | **82% / 73% / 73%** | 人类偏好胜率对 Claude 3 Opus 基线，领域专家：法律（Law）82%、金融（Finance）73%、哲学（Philosophy）73% | 评分者按任务说明与模型对话；胜率方法推迟到 Claude 3 主卡 §5.5。**评分者 n、任务 n、盲法、平局：未报告** | 附录 §2.1（正文；图 3） | Opus 按构造为 50%（基线对自身） | 是，按报告——但本文件无 n、无方法，这些胜率作为效应量无法解读 |
+| E3.8 | （图 3 其余每任务胜率） | 人类偏好胜率：编码（Coding）、文档（Documents）、医学（Medicine）、创意写作（Creative Writing）、多语言（Multilingual）、STEM、指令遵循（Instruction-Following）、诚实（Honesty）、视觉（Vision）、无害（Harmlessness）、仅乐于助人（Helpful-Only） | 仅图 3；PDF 文本抽取打乱了标签与数值的对应 | 附录图 3 | Opus 按构造为 50% | **未核实——见“未核实 / 未能核实”。** 只有 E3.7 中的三个值得到正文确认；其余值无法从文本取回可靠恢复，不作为已确立值呈现 |
 
-### E4. Announcement-only claims (no table behind them)
+### E4. 仅公告中的宣称（背后没有表格）
 
-| # | Number / claim | What | Conditions | Location | Verdict |
+| # | 数字 / 宣称 | 是什么 | 条件 | 位置 | 结论 |
 |---|---|---|---|---|---|
-| E4.1 | **2× the speed of Claude 3 Opus** | Speed ratio | **No conditions at all:** no latency, throughput, task, hardware, or measurement method reported in either document | Announcement L19–20 | **Unverifiable as stated.** A ratio with no numerator, denominator, or measurement is not a usable number |
-| E4.2 | **$3 / $15 per million input / output tokens; 200K-token context window** | Price + context | Launch pricing and context as stated; availability: Claude.ai, iOS app, API, Bedrock, Vertex AI | Announcement L9–11 | Verified as a *stated* launch fact (not a measured result). Prices are June 2024 launch prices, not current prices |
-| E4.3 | **ASL-2** | Safety classification | Based on targeted (not full-RSP) testing; quantitative results not reported; UK AISI tested a "near-final" model | Announcement L47–48; Add. §3 | Verified as a *stated classification*; the evidence behind it is not shown in these sources |
+| E4.1 | **2× Claude 3 Opus 的速度** | 速度比 | **完全没有任何条件：** 两份文件均未报告延迟、吞吐量、任务、硬件或测量方法 | 公告 L19–20 | **按所述无法核实。** 一个没有分子、分母或测量的比值不是可用的数字 |
+| E4.2 | **每百万输入 / 输出 token 3 美元 / 15 美元；20 万 token 上下文窗口** | 价格 + 上下文 | 按所述的发布定价与上下文；可用性：Claude.ai、iOS 应用、API、Bedrock、Vertex AI | 公告 L9–11 | 作为*所述的*发布事实已核实（不是测量结果）。价格是 2024 年 6 月的发布价，不是当前价格 |
+| E4.3 | **ASL-2** | 安全分级 | 基于针对性（而非完整 RSP）测试；定量结果未报告；UK AISI 测试了一个 "near-final"（接近最终的）模型 | 公告 L47–48；附录 §3 | 作为*所述的分级*已核实；其背后的证据未在这些资料中展示 |
 
-**Ledger summary (counting only cells with a stated comparator):** of the 11 Table 1 rows, 3.5 Sonnet leads all reported cells in 7, leads only Claude models or an incomplete field in 3, and loses outright in 2 (MMLU 0-shot CoT, MATH — E1.5, E1.6; GPQA Maj@32 and MMLU 5-shot CoT have no competitor cells at all). In Table 2 it leads 4 of 5 and loses MMMU. The honest summary of the document's own tables is "leads on most reported benchmarks, loses on MATH and MMMU, and several headline comparisons have no competitor data" — not the announcement's unqualified "outperforming competitor models … on a wide range of evaluations".
+**台账小结（仅统计有明确对照的单元格）：** 表 1 的 11 行中，3.5 Sonnet 在 7 行领先全部已报告单元格，在 3 行仅领先 Claude 模型或不完整的比较范围，在 2 行直接落败（MMLU 0-shot CoT、MATH——E1.5、E1.6；GPQA Maj@32 与 MMLU 5-shot CoT 完全没有竞品单元格）。表 2 中它领先 4/5，输掉 MMMU。对文件自身表格的诚实总结是“在多数已报告基准上领先，在 MATH 与 MMMU 上落败，且几项标题比较没有竞品数据”——而不是公告无保留的 "outperforming competitor models … on a wide range of evaluations"（“在广泛评估上击败竞品模型……”）。
 
 ---
 
-## F. Argument map (Argdown-style)
+## F. 论证图（Argdown 风格）
 
 ```
-[Claim C1: 3.5 Sonnet raises the industry bar; beats Opus + competitors at Sonnet speed/cost]
-  + <A1: Table 1 — leads Opus on every row; leads competitors on most reported cells>
+[主张 C1：3.5 Sonnet 提升了行业标杆；以 Sonnet 的速度 / 成本击败 Opus + 竞品]
+  + <A1：表 1——每行都领先 Opus；多数已报告单元格领先竞品>
       + [E1.1 GPQA 59.4% > GPT-4o 53.6%] [E1.7 HumanEval 92.0% > GPT-4o 90.2%]
-      + [E2.2–E2.5 vision leads]
+      + [E2.2–E2.5 视觉领先]
       - [E1.6 MATH 71.1% < GPT-4o 76.6%] [E2.1 MMMU 68.3% < GPT-4o 69.1%] [E1.5 MMLU 0-shot CoT 88.3% < GPT-4o 88.7%]
-      - (co-premise A3 fails in part: protocols differ within rows; competitor cells quoted, not re-run; several cells empty "—")
-  + <A2: Table 3 — agentic coding 64% vs Opus 38%>
-      - (co-premise A5/A6: internal, non-public eval; n, scaffold, budget unreported; no external model run on it)
-  + <A3: Human win rates — experts prefer 3.5 Sonnet (Law 82%, Finance 73%, Philosophy 73%)>
-      - (co-premise A7: method deferred to another document; n/blinding/ties unreported)
-  + <A4: Announcement — 2x Opus speed at Sonnet price ($3/$15, 200K context)>
-      - (co-premise A8: no speed measurement reported at all; price/context are stated facts, not measurements)
-  - [Objection O1: "new industry benchmark for MMLU" (C2) — the 90.4% figure is 5-shot CoT, a protocol with no competitor cell; under the shared 0-shot CoT protocol GPT-4o wins]
-  - [Objection O2: no uncertainty anywhere — with n unreported and no error bars, gaps of 0.3–1.8 pp (AI2D, HumanEval, MGSM, MMMU) cannot be distinguished from noise]
-  - [Objection O3: contamination unaddressed — no decontamination statement; benchmark gains could reflect training-data overlap]
-  + [Rebuttal offered by the document to O1–O3: none. The document does not acknowledge any of these objections.]
-  + [Rebuttal offered to safety concerns (C7): targeted CBRN/cyber/autonomy testing + UK AISI pre-deployment testing + ASL-2 classification]
-      - (but: thresholds and quantitative results withheld; UK AISI results not published here; "near-final" model tested)
+      - （共前提 A3 部分不成立：同一行内协议不同；竞品单元格是引用而非重测；若干单元格为空 "—"）
+  + <A2：表 3——智能体编码 64% 对 Opus 38%>
+      - （共前提 A5/A6：内部非公开评估；n、脚手架、预算未报告；没有外部模型跑过它）
+  + <A3：人类胜率——专家更偏好 3.5 Sonnet（法律 82%、金融 73%、哲学 73%）>
+      - （共前提 A7：方法推迟到另一份文件；n / 盲法 / 平局未报告）
+  + <A4：公告——2 倍于 Opus 的速度，Sonnet 的价格（3 美元 / 15 美元，20 万 token 上下文）>
+      - （共前提 A8：完全未报告任何速度测量；价格 / 上下文是所述事实，不是测量）
+  - [反对 O1："new industry benchmark for MMLU"（新的 MMLU 行业基准，C2）——90.4% 这个数字是 5-shot CoT 协议，没有竞品单元格；在共有的 0-shot CoT 协议下 GPT-4o 获胜]
+  - [反对 O2：全文件没有任何不确定性——n 未报告、无误差棒，0.3–1.8 个百分点的差距（AI2D、HumanEval、MGSM、MMMU）无法与噪声区分]
+  - [反对 O3：污染未处理——没有任何去污染声明；基准提升可能反映训练数据重叠]
+  + [文件对 O1–O3 给出的反驳：无。文件没有承认其中任何反对意见。]
+  + [文件对安全关切（C7）给出的反驳：针对性的 CBRN / 网络安全 / 自主性测试 + UK AISI 部署前测试 + ASL-2 分级]
+      - （但是：阈值与定量结果未公开；UK AISI 结果未在此发表；测试的是 "near-final"（接近最终的）模型）
 
-[Claim C7: ASL-2, no catastrophic-harm risk]
-  + <B1: did not trigger the 4x effective-compute threshold for full RSP protocol>
-      - (co-premise A11: threshold is a policy convention; its value and the model's effective compute are unreported)
-  + <B2: targeted testing found no threshold-of-concern breach>
-      - (threshold values and scores unreported — the reader cannot check the claim)
-  + <B3: external testing by UK AISI + METR exploration>
-      - (results not published in these sources; UK AISI tested a "near-final" model, not necessarily the shipped one)
-  + [Author's own caveat, Add. §3.2: HHH refusals may cause capability evals to underestimate the model; internal elicitation used to compensate — technique undescribed]
+[主张 C7：ASL-2，无灾难性伤害风险]
+  + <B1：未触发完整 RSP 协议的 4 倍有效算力阈值>
+      - （共前提 A11：阈值是政策约定；其数值与模型的有效算力均未报告）
+  + <B2：针对性测试未发现“关注阈值”breach>
+      - （阈值与分数未报告——读者无法核查该主张）
+  + <B3：UK AISI 的外部测试 + METR 的自主性探索>
+      - （结果未发表在这些资料中；UK AISI 测试的是 "near-final"（接近最终的）模型，不一定是已交付的模型）
+  + [作者自己的说明，附录 §3.2：HHH 导致的拒绝可能使能力评估低估模型；已用内部诱发加以补偿——技术未描述]
 ```
 
-**Weakest link (named):** **A3 — the comparability of the cross-vendor table (Table 1, and by extension Table 2).** It is maximally load-bearing (C1 and C2 both rest on it) and has the weakest support: protocols are asymmetric *within* rows, competitor numbers are second-hand quotations from vendor publications rather than re-measurements, cells are missing exactly where a competitor might win (MMLU 5-shot CoT, GPQA Maj@32), and there is no uncertainty quantification to say whether any gap is real. The second-weakest link is A5/A6 (the internal agentic-coding eval): the largest single claimed gap (64% vs. 38%) comes from the least transparent measurement in the document. Evidence that would strengthen the weakest link: a single-harness re-run of all seven models with identical prompts, shots, and decoding, with n, seeds, and confidence intervals reported; evidence that would break it: the same re-run reordering the leaderboard on MATH/MMLU/MMMU or shrinking the GPQA/HumanEval gaps inside noise.
+**最弱一环（已指名）：** **A3——跨厂商表格的可比性（表 1，并延伸到表 2）。** 它最承重（C1 与 C2 都建立在它上面），支撑最弱：同一行内协议不对称，竞品数字是厂商出版物的二手引用而非重新测量，单元格恰恰在竞品可能获胜的地方缺失（MMLU 5-shot CoT、GPQA Maj@32），并且没有任何不确定性量化来说明差距是否真实。第二弱的一环是 A5/A6（内部智能体编码评估）：最大的单个宣称差距（64% 对 38%）来自文件中最不透明的测量。能加强最弱一环的证据：在同一框架下用相同的提示词、样本数与解码重跑全部七个模型，并报告 n、种子与置信区间；能打破它的证据：同样的重跑在 MATH / MMLU / MMMU 上重排了排行榜，或把 GPQA / HumanEval 的差距缩小到噪声以内。
 
 ---
 
-## G. Validity judgements
+## G. 效度判断
 
-Scores are 1–5 (5 = strong). The object being judged is the *announcement + addendum as evidence for C1–C7*, not the model itself — the model may be better or worse than the document shows; the document does not let a reader tell.
+分数为 1–5（5 = 强）。被判断的对象是*公告 + 附录作为 C1–C7 的证据*，不是模型本身——模型可能比文件显示的更好或更差；文件不让读者判断这一点。
 
-| Dimension | Score | Reasons |
+| 维度 | 分数 | 理由 |
 |---|---|---|
-| Internal validity | **2/5** | Threats, named: (1) **protocol asymmetry** — different shots/CoT per model within rows (MATH, MGSM, DROP, GSM8K); (2) **second-hand competitor data** — GPT-4o/Gemini/Llama numbers quoted from vendor publications, not measured under Anthropic's harness; (3) **no contamination analysis** — leakage would inflate exactly the reported cells; (4) **internal eval opacity** — agentic coding has no n, no scaffold, no selection criteria; (5) **human-eval method deferred** to another document. What helps: within-Claude comparisons were presumably run under one harness, and the direction of the Opus gap is consistent across many independent benchmarks, which is harder to fake by protocol choice alone. |
-| External validity | **2/5** | Generalises to: standard academic benchmarks of the kind reported, and to short, single-turn QA/coding tasks similar to them. Does **not** generalise to: multi-turn real-world work (only the opaque internal eval speaks to this, and it cannot be checked), long-document reasoning at 200K (NIAH is a synthetic single-fact retrieval), non-English use beyond MGSM, tool use, or deployment conditions (latency, cost at scale, failure modes). No user study in the wild; Artifacts is announced, not evaluated. |
-| Construct validity | **2/5** | The document treats "benchmark accuracy" as "intelligence" (A1) without argument. GPQA/MMLU measure multiple-choice test-taking under a specific prompt format as much as they measure knowledge; HumanEval measures short-function synthesis; NIAH measures synthetic retrieval. The agentic-coding eval is the closest to a real-world construct and is the least transparent. The refusal metrics (Table 4) are the most construct-clean part of the document — they measure what they claim (refusal behaviour on named datasets) — but even there, dataset sizes are unreported. |
-| Statistical-conclusion validity | **1/5** | No n, no seeds, no runs, no error bars, no CIs, no p-values, no effect sizes, no multiple-comparison correction — for any number in the document. Several headline gaps (AI2D +0.3 pp, MGSM +0.9 pp, MMMU −0.8 pp, HumanEval +1.8 pp) are of a size that could plausibly be noise on benchmarks of these sizes, and the reader is given no way to tell. The October addendum's later OSWorld table *does* report 95% CIs, which only underlines their absence here. |
-| Reproducibility (re-run the headline results) | **1/5** | A capable reader cannot re-run any headline number from these documents: no prompts, no harness, no harness version, no decoding settings, no seeds, no code, no data for the internal evals, no checkpoint identifier for the model. The public benchmarks could in principle be re-run against the API, but the *exact* June 2024 snapshot is not pinned (the API model has since been superseded), so even that route cannot reproduce the June numbers. The safety results are entirely non-reproducible (thresholds and scores withheld). |
-| **Parsimony check** | — | Paper's explanation: "the new model is more capable across the board (better reasoning, coding, vision)". Simplest alternative explaining the same data: "the new model is better on these benchmarks under these protocols" — which is the same data with fewer assumptions, since it drops the leap from benchmark scores to general intelligence (A1) and from an internal eval to real-world engineering ability (A5). Occam does not decide between them on the *numbers* (both fit the reported cells), but the narrower explanation assumes strictly less, so the broader headline claim carries an unjustified surplus. Where the data differ from the explanation: MATH and MMMU losses, and the missing competitor cells, are *not* explained by "more capable across the board" without additional assumptions (e.g. "those benchmarks don't measure what matters") — assumptions the document never states. |
+| 内部效度 | **2/5** | 已指名的威胁：(1) **协议不对称**——同一行内不同模型用不同的样本数 / CoT（MATH、MGSM、DROP、GSM8K）；(2) **二手竞品数据**——GPT-4o / Gemini / Llama 的数字引自厂商出版物，不是按 Anthropic 的框架测量的；(3) **无污染分析**——泄漏会恰恰抬高已报告的单元格；(4) **内部评估不透明**——智能体编码无 n、无脚手架、无选择标准；(5) **人类评估方法被推迟**到另一份文件。有利的一面：Claude 模型内的比较大概是在同一框架下跑的，Opus 差距的方向在许多独立基准上一致，仅靠协议选择更难伪造。 |
+| 外部效度 | **2/5** | 可推广到：所报告种类的标准学术基准，以及与之类似的短时单轮问答 / 编码任务。**不可**推广到：多轮真实世界工作（只有不透明的内部评估涉及它，且无法核查）、20 万 token 下的长文档推理（NIAH 是合成的单事实检索）、MGSM 之外的非英语使用、工具使用，或部署条件（延迟、规模化成本、失效模式）。没有野外用户研究；Artifacts 只是发布，未经评估。 |
+| 构念效度 | **2/5** | 文件把“基准准确率”当作“智能”（A1），未加论证。GPQA / MMLU 衡量的与其说是知识，不如说是在特定提示词格式下的多项选择应试；HumanEval 衡量的是短函数合成；NIAH 衡量的是合成检索。智能体编码评估最接近真实世界构念，也最不透明。拒绝指标（表 4）是文件在构念上最干净的部分——它们衡量的正是其所宣称的（在具名数据集上的拒绝行为）——但即便如此，数据集规模也未报告。 |
+| 统计结论效度 | **1/5** | 无 n、无种子、无运行次数、无误差棒、无 CI、无 p 值、无效应量、无多重比较校正——对文件中的任何数字都是如此。若干标题差距（AI2D +0.3 个百分点、MGSM +0.9 个百分点、MMMU −0.8 个百分点、HumanEval +1.8 个百分点）的量级在这些规模的基准上完全可能是噪声，读者没有任何办法判断。10 月附录后来在 OSWorld 表中*确实*报告了 95% CI，这只更凸显了此处缺失。 |
+| 可复现性（重跑标题结果） | **1/5** | 有能力的读者无法从这些文件重跑任何标题数字：无提示词、无评估框架、无框架版本、无解码设置、无种子、无代码、无内部评估的数据、无模型检查点标识符。公开基准原则上可以对 API 重跑，但*确切的* 2024 年 6 月快照未被锁定（API 上的模型此后已被取代），所以即便这条路也无法复现 6 月的数字。安全结果完全不可复现（阈值与分数均未公开）。 |
+| **简约性检查** | — | 文件的解释：“新模型全面更强（推理、编码、视觉更好）”。能解释同样数据的最简单替代解释：“新模型在这些基准、这些协议下更好”——这是同样的数据、更少的假设，因为它去掉了从基准分数到一般智能的跳跃（A1），以及从内部评估到真实世界工程能力的跳跃（A5）。就*数字*而言，奥卡姆无法在两者之间裁决（两者都拟合已报告的单元格），但较窄的解释假设严格更少，所以更宽的标题宣称带有无根据的剩余部分。数据与解释不符之处：MATH 与 MMMU 的失利，以及缺失的竞品单元格，无法用“全面更强”来解释，除非加上额外的假设（例如“那些基准衡量的不是重要的东西”）——文件从未陈述这些假设。 |
 
-**Razors applied:**
+**应用的剃刀：**
 
-- **Hitchens:** the following are asserted without evidence and are marked "to be dismissed until evidence is offered": 2× Opus speed (no measurement); "marked improvement in grasping nuance, humor, and complex instructions" (no measurement — announcement L15–16); "exceptional at writing high-quality content with a natural, relatable tone" (no measurement); "state-of-the-art" as an unqualified claim (contradicted in-table on MATH/MMMU); Artifacts as a "dynamic workspace" improvement (product description, no user evaluation).
-- **Alder (unfalsifiable / untestable as stated):** "raises the industry bar for intelligence" — "intelligence" is never operationalised, so the headline cannot be tested; testable only in its reduced form ("scores higher on benchmarks X, Y, Z under protocol P"). "Grasping nuance and humor" — same problem.
-- **Hume (causal sufficiency):** the document never identifies a *cause* of the improvement (no training change is described at all — no data, compute, architecture, or method), so there is no causal claim to check; the mechanism behind the gain is entirely unexamined. A 26 pp agentic-coding gap with no stated mechanism and no scaffold description is a large effect with no offered cause.
-- **Popper:** the benchmark claims are falsifiable in principle (re-run the benchmarks) but not in practice from these documents (no harness/prompts/snapshot pin). The safety claim (ASL-2) is effectively unfalsifiable by an outside reader because thresholds and scores are withheld.
-- **Sagan:** the strongest claim — a mid-tier model dethroning the previous flagship and leading the industry — is a substantial one; the evidence offered (a single vendor-run table with no uncertainty) does not meet the bar that claim sets for itself.
+- **Hitchens 剃刀：** 以下主张无证据支持，标记为“在提供证据之前予以驳回”：2 倍于 Opus 的速度（无测量）；"marked improvement in grasping nuance, humor, and complex instructions"（“在把握细微差别、幽默与复杂指令上有显著提升”，无测量——公告 L15–16）；"exceptional at writing high-quality content with a natural, relatable tone"（“以自然、亲切的语气写出高质量内容的能力出众”，无测量）；无保留的 "state-of-the-art"（“最先进”，在表内 MATH / MMMU 上被反驳）；Artifacts 作为“动态工作区”的改进（产品描述，无用户评估）。
+- **Alder 剃刀（按所述不可证伪 / 不可检验）：** "raises the industry bar for intelligence"（“提升了智能的行业标杆”）——"intelligence"（智能）从未被操作化，所以标题无法被检验；只有在其简化形式下可检验（“在协议 P 下基准 X、Y、Z 得分更高”）。"Grasping nuance and humor"（“把握细微差别与幽默”）——同样的问题。
+- **Hume 剃刀（因果充分性）：** 文件从未指认改进的*原因*（完全没有描述任何训练变化——无数据、无算力、无架构、无方法），所以没有任何因果主张可供核查；提升背后的机制完全未经考察。一个 26 个百分点的智能体编码差距，没有陈述的机制，也没有脚手架描述，是一个没有提供原因的大效应。
+- **Popper 剃刀：** 基准宣称原则上可证伪（重跑基准即可），但从这些文件出发实践中不可证伪（无评估框架 / 提示词 / 快照锁定）。安全宣称（ASL-2）对外部读者实际上不可证伪，因为阈值与分数均未公开。
+- **Sagan 标准：** 最强的宣称——一个中端模型推翻此前的旗舰并领先行业——是一项重大的宣称；所提供的证据（一张厂商运行的、无不确定性的表格）达不到该宣称自己设定的标准。
 
-**Overall judgement:** The document establishes, to a moderate degree, that the June 2024 Claude 3.5 Sonnet snapshot scored higher than Claude 3 Opus on the benchmarks Anthropic chose to report, under the protocols Anthropic chose — the within-family gap is large, consistent across many benchmarks, and unlikely to be entirely artefactual. It does **not** establish the headline ("outperforming competitor models … sets new industry benchmarks") in its unqualified form: the tables themselves show losses and empty cells, the cross-vendor comparison is methodologically asymmetric and second-hand, and no number carries any uncertainty. The safety case is an assertion backed by undisclosed thresholds and unpublished external results. The agentic-coding result (64% vs. 38%) is the most practically interesting number and the least checkable.
+**非法跳跃检查（工具 §6A.3，借自 paper-review-and-digest 的 argdown_lint 思路）：** (1) 替代指标 → 硬终点主张：犯了——基准准确率被当作“智能”与“行业标杆”（A1，C1）；(2) 相关 → 因果：犯了——分数更高被当作“模型更强”而无任何机制（§B 链 1、链 2）；(3) 单项研究 → “一贯表明”：犯了——一张厂商表格被表述为行业级结论（C1、C2）；(4) 亚组 / 次要终点 → 获益主张：部分犯了——法律 / 金融 / 哲学三个胜率（E3.7）被用来支撑整体“专家更偏好”之说，而图 3 其余任务的胜率未核实（E3.8）。
 
-**Bottom line in one sentence:** A credible within-family improvement claim wrapped in an overstated industry-leadership claim, supported by a vendor table that is useful as a record of what Anthropic reported in June 2024 and inadequate as evidence for the generality of what it claims.
+### 科学价值四维 verdict（工具 §6A.3，每维一句话底线 + 证据 + 反事实；每条断言均可从 §E 或 §F 复核）
 
-**Confidence: medium** — medium, not low, because the within-Claude gaps are large and consistent; not high, because the cross-vendor comparison, the statistics, and the safety evidence are all unverifiable from the sources.
+- **认知价值：** 它确认了一个可部署的事实——中端模型在已报告基准上可以击败此前的旗舰（GPQA 59.4% 对 50.4%、HumanEval 92.0% 对 84.9%、智能体编码 64% 对 38%），但没有推翻或确认任何关于智能、训练或评估的科学信念，因为文件没有提出或检验任何机制。证据：§E 的表内差距方向一致且量级大；反事实：要推翻“中端击败旗舰”这一认知，需要证明这些差距全是协议不对称或污染造成的人工产物——而要证明这一点，只需一次单框架重跑（见 §H 第 1 项），文件本身没有提供能排除这种可能性的材料。
+- **方法价值：** 低。它没有留下任何别人能直接拿走复用的东西——没有新工具、新范式、新度量、新实验设计、新数据集；唯一接近“方法”的内部智能体编码评估只以散文描述，未发布任务集、脚手架或 n，别人无法复用。证据：§D“统计”表全是“未报告”，§E 的每个数字都缺少评估框架与提示词；反事实：如果附录发布了智能体编码任务集与脚手架，方法价值会立刻上升——因为那将是第一个公开的、基于真实 PR 的多文件智能体编码基准；它没有发布，所以方法价值就是低的，要明说。
+- **边界价值：** 它明确不证明的东西比它证明的东西更多：不证明行业领先（MATH、MMMU 上落败，若干标题比较无竞品数据）；不证明一般智能（A1 未验证）；不证明真实世界软件工程能力（A5/A6 未验证）；不证明 2 倍速度（无测量）；不证明安全性（阈值与分数未公开，ASL-2 只是断言）。读者最容易误读的推论是“基准领先 = 模型全面更强、部署一定更好”——§F 的反对 O1–O3 与最弱一环 A3 正是针对这一误读。边界写得越清，结论越可信：本文件的可信部分只限于“2024 年 6 月快照在 Anthropic 所选基准、所选协议下得分高于 Opus”。
+- **启示价值：** 它使一次最便宜的决定性检验成为可能——在**单一评估框架**下，用**相同提示词、相同样本数、相同解码**重跑 GPQA Diamond、HumanEval、MATH、MMMU 四项基准，对比当前可用的 Claude 3.5 Sonnet 与 GPT-4o，并报告 n、种子与 95% CI；判据：若 GPT-4o 在 GPQA 或 HumanEval 上打平或领先，或任一差距落入 CI 之内，则 C1/C2 的行业领先宣称即被证伪；若 3.5 Sonnet 在四项上均领先且超出 CI，则宣称得到加强。这项实验比其他后续工作更值得先做，因为它只用公开基准与现有 API、成本最低，却直接裁决全文件最承重的主张（C1/C2）与最弱一环（A3）；相比之下，发布内部智能体编码任务集或 UK AISI 结果都取决于 Anthropic 是否愿意公开，不在读者掌控之中。
 
----
+**总体判断：** 文件在中等程度上确立了 2024 年 6 月 Claude 3.5 Sonnet 快照在 Anthropic 选择报告的基准上、按 Anthropic 选择的协议得分高于 Claude 3 Opus——家族内差距大、在许多基准上方向一致，不太可能完全是人工产物。它**没有**以无保留的形式确立标题宣称（"outperforming competitor models … sets new industry benchmarks"，“击败竞品模型……树立新的行业基准”）：表格本身显示了失利与空白单元格，跨厂商比较在方法上不对称且是二手的，没有任何数字带有不确定性。安全论证是断言，背后是未公开的阈值与未发表的外部结果。智能体编码结果（64% 对 38%）是最具实践意义的数字，也是最难核查的。
 
-## H. Falsifier, alternative explanations, limitations, what to watch
+**一句话底线：** 一项可信的家族内改进宣称，包裹在夸大的行业领先宣称之中，所依据的厂商表格作为“Anthropic 在 2024 年 6 月报告了什么”的记录是有用的，作为其宣称之普遍性的证据则是不充分的。
 
-### Falsifiers (one per main claim; stated as observable outcomes)
-
-- **C1/C2 (beats competitors / new industry benchmarks):** an independent single-harness re-run (identical prompts, shots, decoding, model versions pinned) in which GPT-4o matches or beats 3.5 Sonnet on GPQA Diamond and HumanEval, or in which the MMLU 5-shot CoT gap vs. GPT-4o disappears. *Already partially realised within the document itself:* GPT-4o leads on MATH and MMMU and on MMLU 0-shot CoT.
-- **C3 (2× Opus speed):** a published latency/throughput measurement under stated conditions (same task mix, same hardware class, same API path) showing a ratio materially different from 2.0 (e.g. ≤1.3×).
-- **C4 (agentic coding 64% vs. 38%):** a public replication on SWE-bench Verified (or the same PR-based task set, if released) showing the June snapshot at a pass rate far from 64%, or showing the Opus gap collapsing when both models use the same scaffold and tool budget.
-- **C5 (strongest vision model):** a re-run of MMMU/MathVista/ChartQA/DocVQA/AI2D under one harness showing a competitor ahead on the majority, or the MMMU loss widening.
-- **C7 (ASL-2):** publication of the thresholds of concern and the model's scores showing a breach; or an external evaluation (UK AISI results, if published; METR) reporting capability above the ASL-3 threshold.
-- **Irreducibly unfalsifiable as stated:** "raises the industry bar for intelligence" (no operationalisation of "intelligence") and "grasps nuance and humor" (no measurement). These are recorded as unfalsifiable, not as supported.
-
-### Alternative explanations (at least two, with discriminating evidence)
-
-1. **Prompt/protocol asymmetry, not model superiority (vs. A3).** *Story:* 3.5 Sonnet was evaluated under its most favourable protocol per benchmark (e.g. 5-shot CoT for MMLU, where it scores 90.4%, vs. the 0-shot CoT protocol where GPT-4o wins), while competitors were quoted from their own publications under different protocols or left blank. *Divergent prediction:* under one fixed harness with identical prompts/shots for all models, the cross-vendor gaps shrink or reorder, while the within-Claude gaps (same harness) stay. *Discriminating evidence:* a single-harness replication (e.g. OpenAI simple-evals, or an independent eval suite) with pinned versions and CIs.
-2. **Benchmark contamination / format fit, not general capability (vs. A1/A2).** *Story:* the gains reflect overlap between training data and benchmark items (or heavy optimisation to benchmark formats during development), so scores overstate transferable capability. *Divergent prediction:* the model shows much smaller gains on *fresh, post-cutoff* benchmarks and on real-world task suites than on the reported (pre-2024, widely mirrored) benchmarks. *Discriminating evidence:* a decontamination/overlap analysis (never published for this model) or performance on benchmarks created after the April 2024 knowledge cutoff — the October addendum's SWE-bench Verified (33.4% → 49.0% for the upgraded snapshot) is a partial, later data point in this direction, but it concerns a different snapshot and a different eval.
-3. **Scaffold and tooling, not the model, drive the agentic-coding gap (vs. A5/A6).** *Story:* the 64% vs. 38% gap reflects a better agent harness, tool set, iteration budget, or prompts given to the newer model (or an older, weaker harness for Opus), not a 26 pp model difference. *Divergent prediction:* swapping harnesses (Opus on the new scaffold, 3.5 Sonnet on the old) moves the pass rates with the scaffold, not the model. *Discriminating evidence:* any release of the eval harness, or a public SWE-bench-style replication with a fixed scaffold for both models.
-4. **Style/length preference, not capability, drives the human win rates (vs. A7).** *Story:* raters preferred 3.5 Sonnet's outputs for tone, formatting, or length — qualities the announcement itself praises ("natural, relatable tone") — rather than for correctness. *Divergent prediction:* length-controlled, blinded re-runs show win rates near 50% on correctness-scored tasks while remaining high on style-scored ones. *Discriminating evidence:* a blinded human eval with output-length controls and correctness-based scoring (not reported in this document).
-
-### Author-stated limitations (quoted or closely paraphrased, with location)
-
-- "We still have a lot to learn about the science of evaluations and ideal cadences for performing these tests" (Addendum §3.1) — an explicit admission that the evaluation methodology is immature.
-- HHH training may cause capability evaluations to **underestimate** the model's underlying capabilities due to refusals; internal elicitation was used to compensate, and results "may underestimate the capability of an equivalent Helpful-only model" (Addendum §3.2).
-- The model "does not trigger the 4x effective compute threshold at which we will run the full evaluation protocol" (Addendum §3.1) — i.e. the full RSP protocol was **not** run for this model; only targeted testing was done.
-- The UK AISI tested a "**near-final** model" (Addendum §3.2), not necessarily the shipped artefact.
-- The announcement itself states **no limitations at all** — no caveats on any capability claim.
-
-### Analyst-found limitations (not stated by the author)
-
-- No uncertainty quantification, no n, no seeds, no harness, no prompts, no decoding — for any number.
-- No training information whatsoever (data, compute, parameters, architecture, method) — the model is a black box; the *cause* of the improvement is never addressed.
-- No contamination/decontamination analysis.
-- Cross-vendor cells are second-hand, protocol-asymmetric, and incomplete ("—" exactly where comparisons would be most informative).
-- No checkpoint/version identifier, so the evaluated artefact cannot be tied to the shipped artefact.
-- Safety thresholds and quantitative safety scores are withheld; the ASL-2 classification cannot be checked.
-- Human-eval method deferred to the Claude 3 main card §5.5, which is not part of this release; Figure 3 values are not recoverable from the document as fetched (see Unverified).
-- The announcement page as it exists today is not the June 2024 original (Aug 2025 update notice; metadata updated 2026-11-13); the benchmark content lives in the addendum, not the announcement, so a reader of the announcement alone sees claims with no numbers.
-- Roadmap claims (C9: Haiku/Opus "later this year") are promises, not findings; Haiku did arrive in October 2024, Opus 3.5 never shipped — a reminder that the document's forward-looking statements should not be read as results. (The non-arrival of Claude 3.5 Opus is external knowledge, noted here only as a caution about C9, not as a finding of this deep dive.)
-
-### What to watch next (what would most change the judgement)
-
-1. **The October 2024 addendum** (Claude 3.5 Haiku and Upgraded Claude 3.5 Sonnet) — the immediate successor document: it adds SWE-bench Verified, TAU-bench, and OSWorld with 95% CIs, and re-presents the June numbers. Comparing its protocols and CIs against the June tables is the fastest way to test whether the June gaps survive better measurement. *(Next in the chronological redo; do not conflate its numbers with the June snapshot's.)*
-2. **Independent single-harness replications** of the June snapshot (e.g. simple-evals-style runs) with pinned versions and confidence intervals — the direct test of falsifier 1 and alternative 1.
-3. **Publication of the UK AISI pre-deployment results** or METR's autonomy assessment — the direct test of C7.
-4. **Any release of the internal agentic-coding eval** (task set, harness, n) — the direct test of C4 / alternative 3.
-5. **Later Claude 3.5 Sonnet system-card entries** — whether Anthropic's own later reporting revises any June number (revisions would be evidence about the June table's reliability).
-
-### Open questions (from the source; "can't tell" + what would settle each)
-
-- What is the exact checkpoint / API model ID of the evaluated June snapshot? *Settled by:* Anthropic publishing a version identifier or dated snapshot record. **Can't tell from these sources.**
-- What were the prompts, harness, decoding settings, n, and seeds for Tables 1–2? *Settled by:* release of eval configurations. **Not reported.**
-- Was there any benchmark contamination, and was decontamination performed? *Settled by:* an overlap analysis. **Not reported.**
-- What are the safety "thresholds of concern" and the model's scores against them? *Settled by:* publication of the RSP evaluation details for this model. **Not reported.**
-- What are the Figure 3 win rates for tasks other than Law/Finance/Philosophy, and what were the rater/task counts? *Settled by:* the rendered Figure 3 or the Claude 3 main card §5.5. **Can't tell from the text fetch (see Unverified).**
-- How was "twice the speed" measured? *Settled by:* any latency/throughput methodology. **Not reported.**
-- What is the model's knowledge cutoff? **Not reported in the June sources** (the October addendum states April 2024 for both the original and upgraded snapshots — a later document, not a June source; see Unverified).
+**置信度：中**——中而非低，因为 Claude 模型内的差距大且一致；不高，因为跨厂商比较、统计与安全证据均无法从资料中核实。
 
 ---
 
-## Unverified / could not verify
+## H. 证伪器、替代解释、局限、接下来看什么
 
-Everything in this section is something this deep dive **did not verify against the primary sources read on 2026-11-23**. Items here are not presented as established anywhere in the file above.
+### 证伪器（每个主要主张一个；表述为可观测的结果）
 
-### Official links
+- **C1/C2（击败竞品 / 新的行业基准）：** 一次独立的单框架重跑（相同的提示词、样本数、解码，模型版本锁定），其中 GPT-4o 在 GPQA Diamond 与 HumanEval 上打平或击败 3.5 Sonnet，或 MMLU 5-shot CoT 与 GPT-4o 的差距消失。*在文件内部已部分实现：* GPT-4o 在 MATH、MMMU 与 MMLU 0-shot CoT 上领先。
+- **C3（2 倍于 Opus 的速度）：** 一次在所述条件下（相同的任务组合、相同的硬件级别、相同的 API 路径）发表的延迟 / 吞吐量测量，显示比率与 2.0 有实质差异（例如 ≤1.3 倍）。
+- **C4（智能体编码 64% 对 38%）：** 在 SWE-bench Verified 上（或在同一 PR 任务集上，如发布）的公开复现显示 6 月快照的通过率远非 64%，或显示当两个模型使用同一脚手架与工具预算时，与 Opus 的差距崩塌。
+- **C5（最强的视觉模型）：** 在同一框架下重跑 MMMU / MathVista / ChartQA / DocVQA / AI2D，显示竞品在多数项目上领先，或 MMMU 的失利扩大。
+- **C7（ASL-2）：** 公布关注阈值与模型分数，显示 breach；或外部评估（UK AISI 结果，如发表；METR）报告的能力高于 ASL-3 阈值。
+- **按所述根本不可证伪：** "raises the industry bar for intelligence"（“提升了智能的行业标杆”，"intelligence" 未操作化）与 "grasps nuance and humor"（“把握细微差别与幽默”，无测量）。这些被记录为不可证伪，而非得到支持。
 
-| Link | Status |
+### 替代解释（至少两个，附可区分的证据）
+
+1. **提示词 / 协议不对称，而非模型更优（针对 A3）。***说法：* 3.5 Sonnet 在每个基准下都按其最有利的协议评估（例如 MMLU 用 5-shot CoT，得 90.4%，而在 GPT-4o 获胜的 0-shot CoT 协议下只有 88.3%），竞品则按其自己的出版物以不同协议引用，或留空。*不同预测：* 在一个固定框架下用相同的提示词 / 样本数跑全部模型，跨厂商差距缩小或重排，而 Claude 模型内的差距（同一框架）保持不变。*可区分的证据：* 一次单框架复现（例如 OpenAI simple-evals 风格，或独立评估套件），版本锁定并报告 CI。
+2. **基准污染 / 格式适配，而非一般能力（针对 A1/A2）。***说法：* 提升反映了训练数据与基准题目的重叠（或开发过程中对基准格式的大量优化），所以分数高估了可迁移的能力。*不同预测：* 模型在*全新的、截止日期之后的*基准与真实世界任务套件上的提升，远小于在已报告的（2024 年之前、被广泛镜像的）基准上的提升。*可区分的证据：* 一次去污染 / 重叠分析（从未为该模型发表）或在知识截止日期之后创建的基准上的表现——10 月附录的 SWE-bench Verified（升级版快照从 33.4% 到 49.0%）是这一方向上的部分、较晚的数据点，但它针对的是另一个快照与另一项评估。
+3. **脚手架与工具，而非模型，推动了智能体编码差距（针对 A5/A6）。***说法：* 64% 对 38% 的差距反映的是给新模型更好的智能体框架、工具集、迭代预算或提示词（或给 Opus 更旧、更弱的框架），而不是 26 个百分点的模型差异。*不同预测：* 互换框架（Opus 用新脚手架，3.5 Sonnet 用旧脚手架）后，通过率随脚手架走，而非随模型走。*可区分的证据：* 任何评估框架的发布，或一次公开的 SWE-bench 风格复现，对两个模型使用固定脚手架。
+4. **风格 / 长度偏好，而非能力，推动了人类胜率（针对 A7）。***说法：* 评分者偏好 3.5 Sonnet 的输出是因为语气、格式或长度——这些正是公告本身称赞的品质（"natural, relatable tone"，“自然、亲切的语气”）——而不是因为正确性。*不同预测：* 长度受控的盲法重跑在按正确性评分的任务上胜率接近 50%，而在按风格评分的任务上胜率仍然高。*可区分的证据：* 一次带输出长度控制与基于正确性评分的盲法人类评估（本文件未报告）。
+
+### 作者自述的局限（引用或接近原文的转述，附位置）
+
+- "We still have a lot to learn about the science of evaluations and ideal cadences for performing these tests"（“关于评估科学与执行这些测试的理想节奏，我们仍有很多要学”）（附录 §3.1）——明确承认评估方法论尚不成熟。
+- HHH 训练可能因拒绝而导致能力评估**低估**模型的底层能力；已用内部诱发加以补偿，结果 "may underestimate the capability of an equivalent Helpful-only model"（“可能低估一个等价的仅 Helpful 模型的性能”）（附录 §3.2）。
+- 模型 "does not trigger the 4x effective compute threshold at which we will run the full evaluation protocol"（“没有触发我们将运行完整评估协议的 4 倍有效算力阈值”）（附录 §3.1）——即完整 RSP 协议**没有**为该模型运行；只做了针对性测试。
+- UK AISI 测试的是 "**near-final** model"（“接近最终的模型”）（附录 §3.2），不一定是已交付的产物。
+- 公告本身**完全没有陈述任何局限**——对任何能力宣称都没有保留意见。
+
+### 分析者发现的局限（作者未说的）
+
+- 任何数字都没有不确定性量化，无 n、无种子、无评估框架、无提示词、无解码。
+- 完全没有任何训练信息（数据、算力、参数、架构、方法）——模型是个黑箱；改进的*原因*从未被讨论。
+- 没有污染 / 去污染分析。
+- 跨厂商单元格是二手的、协议不对称的、不完整的（"—" 恰恰出现在比较最有信息量的地方）。
+- 没有检查点 / 版本标识符，被评估的产物无法与已交付的产物对应起来。
+- 安全阈值与定量安全分数未公开；ASL-2 分级无法核查。
+- 人类评估方法推迟到 Claude 3 主卡 §5.5，该文件不属于本次发布；图 3 的数值无法从按取回的文件中恢复（见未核实）。
+- 按今天存在的公告页面不是 2024 年 6 月的原版（2025 年 8 月更新通知；元数据更新于 2026-11-13）；基准内容在附录中，不在公告中，所以只读公告的读者看到的是没有数字的宣称。
+- 路线图宣称（C9：Haiku / Opus "later this year"，“今年晚些时候”）是承诺，不是发现；Haiku 确实在 2024 年 10 月发布了，Claude 3.5 Opus 从未发布——提醒人们不应把文件的前瞻性陈述当作结果来读。（Claude 3.5 Opus 未发布是外部知识，此处仅作为对 C9 的提醒，不是本次精读的发现。）
+
+### 接下来看什么（最能改变判断的）
+
+1. **最便宜的决定性实验（§G 启示价值的落地版，排第一）：** 在单一评估框架下，用相同提示词、相同样本数、相同解码重跑 GPQA Diamond、HumanEval、MATH、MMMU 四项基准，对比当前可用的 Claude 3.5 Sonnet 与 GPT-4o，并报告 n、种子与 95% CI。判据：若 GPT-4o 在 GPQA 或 HumanEval 上打平或领先，或任一差距落入 CI 之内，则 C1/C2 的行业领先宣称即被证伪；若 3.5 Sonnet 在四项上均领先且超出 CI，则宣称得到加强。这是成本最低、信息量最大的下一步：只用公开基准与现有 API，却直接裁决全文件最承重的主张与最弱一环（A3）。
+2. **2024 年 10 月的附录**（Claude 3.5 Haiku 与升级版 Claude 3.5 Sonnet）——直接的后继文件：它增加了 SWE-bench Verified、TAU-bench 与 OSWorld（含 95% CI），并重新呈现了 6 月的数字。将其协议与 CI 与 6 月表格对比，是检验 6 月差距能否在更好的测量下存活的最快方法。*（按时间顺序重做的下一篇；不要把它的数字与 6 月快照的数字混淆。）*
+3. **6 月快照的独立单框架复现**（例如 simple-evals 风格的运行），版本锁定并报告置信区间——对证伪器 1 与替代解释 1 的直接检验。
+4. **UK AISI 部署前结果**或 METR 自主性评估的发表——对 C7 的直接检验。
+5. **内部智能体编码评估的任何发布**（任务集、框架、n）——对 C4 / 替代解释 3 的直接检验。
+6. **Anthropic 后续的 Claude 3.5 Sonnet 系统卡条目**——其后续报告是否修正了任何 6 月数字（修正将是关于 6 月表格可靠性的证据）。
+
+### 未解问题（来自资料；“说不清”+ 什么能解决）
+
+- 被评估的 6 月快照的确切检查点 / API 模型 ID 是什么？*解决办法：* Anthropic 发布版本标识符或注明日期的快照记录。**从这些资料中说不清。**
+- 表 1–2 的提示词、评估框架、解码设置、n 与种子是什么？*解决办法：* 发布评估配置。**未报告。**
+- 是否有任何基准污染，是否做了去污染？*解决办法：* 一次重叠分析。**未报告。**
+- 安全 "thresholds of concern"（“关注阈值”）与模型对这些阈值的分数是什么？*解决办法：* 发表该模型的 RSP 评估细节。**未报告。**
+- 图 3 中除法律 / 金融 / 哲学之外的每任务胜率是多少，评分者 / 任务数量是多少？*解决办法：* 渲染后的图 3 或 Claude 3 主卡 §5.5。**无法从文本取回中得知（见未核实）。**
+- "twice the speed"（“两倍速度”）是如何测量的？*解决办法：* 任何延迟 / 吞吐量方法论。**未报告。**
+- 模型的知识截止日期是什么？**6 月资料未报告**（10 月附录称原始与升级版快照均为 2024 年 4 月——那是较晚的文件，不是 6 月资料；见未核实）。
+
+---
+
+## 未核实 / 未能核实
+
+本节中的所有内容都是本次精读**未对照 2026-11-23 所读原始资料核实**的。本节中的条目在文件上文任何地方均不作为已确立内容呈现。
+
+### 官方链接
+
+| 链接 | 状态 |
 |---|---|
-| https://www.anthropic.com/news/claude-3-5-sonnet | **Verified** — full text fetched 2026-11-23 (81 lines). Note: page carries an Aug 28, 2025 update notice and `Updated: 2026-11-13`; it is not the pristine June 2024 original |
-| https://www.anthropic.com/system-cards | **Verified** — fetched 2026-11-23; lists "Claude Sonnet 3.5, June 2024" (its link resolves to the addendum PDF below) |
-| https://assets.claude.com/fed9cc193a14b84131812372d8d5857f8f304c52.pdf (Claude 3.5 Sonnet Model Card Addendum) | **Verified** — full text fetched 2026-11-23 (559 lines); confirmed as the system-cards "June 2024" link target |
-| Claude 3 Model Card (main card, March 2024), §5.5 — referenced by the addendum for the human-eval win-rate method | **Not read in this deep dive** — the win-rate method is therefore unverified here; do not cite this file as establishing how win rates were computed |
-| RSP Evaluations Report – Claude 3 Opus (May 2024, addendum ref [23]) | **Not read** — cited only as a reference inside the addendum |
-| UK AISI / US AISI pre-deployment results; METR autonomy exploration | **Not published in the sources read** — their existence is asserted by Anthropic; their content is unverified |
-| The announcement's internal links (API docs, Bedrock, Vertex AI, ASL-2 page, Thorn, Commerce Dept. MoU) | **Not followed / not verified** — link targets were not opened; only the link text in the announcement was read |
+| https://www.anthropic.com/news/claude-3-5-sonnet | **已核实**——全文取回于 2026-11-23（81 行）。注意：页面带有 2025 年 8 月 28 日更新通知与 `Updated: 2026-11-13`；不是 2024 年 6 月的原始版本 |
+| https://www.anthropic.com/system-cards | **已核实**——取回于 2026-11-23；列有 "Claude Sonnet 3.5, June 2024"（其链接解析到以下附录 PDF） |
+| https://assets.claude.com/fed9cc193a14b84131812372d8d5857f8f304c52.pdf（Claude 3.5 Sonnet Model Card Addendum） | **已核实**——全文取回于 2026-11-23（559 行）；已确认为系统卡页面 "June 2024" 条目的链接目标 |
+| Claude 3 Model Card（主卡，2024 年 3 月），§5.5——附录引用其为人类评估胜率方法的出处 | **本次精读未读**——胜率方法因此未在此核实；不要引用本文件作为胜率如何计算的依据 |
+| RSP Evaluations Report – Claude 3 Opus（2024 年 5 月，附录参考文献 [23]） | **未读**——仅作为附录内的参考文献引用 |
+| UK AISI / US AISI 部署前结果；METR 自主性探索 | **未发表在所读资料中**——其存在由 Anthropic 断言；其内容未核实 |
+| 公告中的内部链接（API 文档、Bedrock、Vertex AI、ASL-2 页面、Thorn、商务部 MoU） | **未跟随 / 未核实**——未打开链接目标；仅读了公告中的链接文字 |
 
-### Numbers and claims that could not be verified against the primary sources
+### 未能对照原始资料核实的数字与宣称
 
-- **Announcement date 2024-06-20 vs. 2024-06-21** — the news page's own metadata says 2024-06-21; secondary chronologies commonly say 2024-06-20. Unresolved; flagged in the header and in §A.
-- **"Twice the speed of Claude 3 Opus"** — no latency, throughput, task, hardware, or method is reported in either source. The ratio is unverifiable as stated and is not presented as an established number in this file.
-- **Figure 3 per-task human-preference win rates other than Law 82%, Finance 73%, Philosophy 73%** — the addendum's prose confirms only those three; the remaining per-task values (Coding, Documents, Medicine, Creative Writing, Multilingual, STEM, Instruction-Following, Honesty, Vision, Harmlessness, Helpful-Only) could not be reliably recovered from the PDF text extraction, because the label-to-value mapping is scrambled. They are **not** reported as established values in §E (see E3.8). A visual read of the rendered Figure 3 would be needed.
-- **"Marked improvement in grasping nuance, humor, and complex instructions" / "exceptional at writing high-quality content with a natural, relatable tone"** (announcement L15–17) — no measurement of any of these is reported; unverified qualitative claims.
-- **Knowledge cutoff April 2024** — stated in the *October* 2024 addendum for the original snapshot, **not** in any June 2024 source read here. Treated as unverified for the June snapshot in this file; do not cite this file for the cutoff.
-- **SWE-bench Verified 33.4% for the June snapshot** — appears as the predecessor value in the October addendum and in secondary chronologies; it is **not** reported in the June announcement or June addendum and is therefore not presented as a verified June number here.
-- **Any parameter count, training compute (FLOPs), training-data composition, architecture, or training method** — not reported in either source; nothing of this kind is claimed in this file.
-- **Any error bar, confidence interval, sample size (n), seed, or p-value for any benchmark** — not reported in either source; all §E numbers are single point estimates with incomplete conditions.
-- **Any quantitative safety score or threshold value (CBRN, cyber, autonomy)** — not reported; only the qualitative outcome ("did not exceed thresholds", ASL-2) is stated.
-- **Exact model version / checkpoint / API model ID for the evaluated snapshot** — not reported in either source.
-- **Table 1 column reconstruction** — the PDF text extraction scrambles Table 1's layout; the §E reconstruction follows the stated column order and was cross-checked for consistency against the October addendum's re-presentation of the June numbers, but a visual check of the rendered Table 1 would be needed to rule out a column-assignment error in any single row. Rows most at risk of mis-assignment are the ones with missing cells (MMLU 5-shot, MMLU 5-shot CoT, GPQA Maj@32, GSM8K). If a future visual read corrects a cell, §E must be corrected, not the headline judgement — the judgement already assumes the table is as reconstructed and notes its limits.
-- **Secondary-source numbers not used:** no number in this file was taken from a secondary summary (news coverage, blogs, leaderboards) without checking it against the two primary sources above. Where a secondary source was consulted during research (search results), its numbers were used only as a prompt to re-check the primary text, and any number that could not be matched to the primary text is listed in this section instead of being presented as established.
+- **公告日期 2024-06-20 对 2024-06-21**——新闻页面自己的元数据说是 2024-06-21；次级年表常说 2024-06-20。未解决；在标题与 §A 中已标注。
+- **"Twice the speed of Claude 3 Opus"（“速度是 Claude 3 Opus 的两倍”）**——两份资料均未报告延迟、吞吐量、任务、硬件或方法。该比值按所述无法核实，在本文件中不作为已确立数字呈现。
+- **图 3 中除法律 82%、金融 73%、哲学 73% 之外的每任务人类偏好胜率**——附录正文仅确认这三个值；其余每任务值（编码、文档、医学、创意写作、多语言、STEM、指令遵循、诚实、视觉、无害、仅乐于助人）无法从 PDF 文本抽取可靠恢复，因为标签与数值的对应被打乱。它们在 §E 中**未**作为已确立值报告（见 E3.8）。需要对渲染后的图 3 做可视化阅读。
+- **"Marked improvement in grasping nuance, humor, and complex instructions" / "exceptional at writing high-quality content with a natural, relatable tone"**（“在把握细微差别、幽默与复杂指令上有显著提升”/“以自然、亲切的语气写出高质量内容的能力出众”）（公告 L15–17）——未报告对其中任何一项的测量；未经核实的定性宣称。
+- **知识截止日期 2024 年 4 月**——出自 *2024 年 10 月*的附录对原始快照的陈述，**不是**此处所读的任何 2024 年 6 月资料。在本文件中，对 6 月快照而言该日期按未核实处理；不要引用本文件作为截止日期的依据。
+- **6 月快照的 SWE-bench Verified 33.4%**——作为前值出现在 10 月附录与次级年表中；它**未**报告在 6 月公告或 6 月附录中，因此不在此作为已核实的 6 月数字呈现。
+- **任何参数量、训练算力（FLOPs）、训练数据构成、架构或训练方法**——两份资料均未报告；本文件未提出此类宣称。
+- **任何基准的任何误差棒、置信区间、样本量（n）、种子或 p 值**——两份资料均未报告；§E 的全部数字都是条件不完整的单点估计。
+- **任何定量安全分数或阈值（CBRN、网络安全、自主性）**——未报告；仅陈述了定性结果（"did not exceed thresholds"，“未超过阈值”、ASL-2）。
+- **被评估快照的确切模型版本 / 检查点 / API 模型 ID**——两份资料均未报告。
+- **表 1 的列重构**——PDF 文本抽取打乱了表 1 的版式；§E 的重构遵循所述列顺序，并对照 10 月附录对 6 月数字的重新呈现做了数据一致性核对，但要排除任何单行的列归属错误，仍需对渲染后的表 1 做可视化检查。最可能错配的行是带缺失单元格的行（MMLU 5-shot、MMLU 5-shot CoT、GPQA Maj@32、GSM8K）。如果未来的可视化阅读修正了某个单元格，应修正 §E，而不是标题判断——判断已假定表格如重构所示，并已注明其限度。
+- **未使用的次级资料数字：** 本文件中没有任何数字取自次级摘要（新闻报道、博客、排行榜）而未对照两份原始资料核对。研究中查阅次级资料（搜索结果）时，其数字仅用作重新核对原始文本的提示，任何无法与原始文本对应的数字都列在本节中，而非作为已确立内容呈现。
 
-### Method note
+### 方法说明
 
-This deep dive was produced by **text fetch** (`browser.open`) of the announcement, the system-cards index, and the addendum PDF — not by a live browser visit. Charts in the announcement (if any) and the rendered figures in the addendum (Figures 1–3, including the NIAH plots and the human-preference charts) were read only through their text extraction and captions, not visually. A visual read of the rendered PDF is the main remaining verification step for Figure 3 and for the Table 1 column reconstruction.
+本次精读通过**文本取回**（`browser.open`）完成，取回了公告、系统卡索引与附录 PDF——不是实时浏览器访问。公告中的图表（如有）与附录中渲染的图（图 1–3，包括 NIAH 图与人类偏好图）仅通过文本抽取与图注阅读，未做可视化阅读。对渲染后 PDF 的可视化阅读，是图 3 与表 1 列重构余下的主要核实步骤。
